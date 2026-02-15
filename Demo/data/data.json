@@ -1,0 +1,4 @@
+{
+  "title": "Hello from JSON",
+  "description": "This text is loaded by JavaScript from Demo/data/data.json."
+}
