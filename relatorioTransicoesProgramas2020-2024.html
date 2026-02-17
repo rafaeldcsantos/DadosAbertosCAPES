@@ -149,6 +149,16 @@
         background: rgba(13, 125, 189, 0.08);
       }
 
+      .program-name-main {
+        font-weight: 600;
+      }
+
+      .program-name-sub {
+        margin-top: 2px;
+        font-size: 0.74rem;
+        color: rgba(10, 39, 64, 0.7);
+      }
+
       .pager {
         margin-top: 10px;
         display: flex;
@@ -208,7 +218,7 @@
       <header class="page-header">
         <h1>Relatório de Transições (2020/2024)</h1>
         <p>
-          Comparação detalhada por <code>código do programa</code> para identificar
+          Comparação detalhada por código do programa para identificar
           continuidade, reclassificações, realocações e entradas/saídas.
         </p>
         <div class="disclaimer">
@@ -611,6 +621,20 @@
                 (row.dados_2024 && row.dados_2024.NM_PROGRAMA_IES) ||
                 (row.dados_2020 && row.dados_2020.NM_PROGRAMA_IES) ||
                 "-";
+              const conceitoPrograma =
+                (row.dados_2024 && row.dados_2024.CD_CONCEITO_PROGRAMA) ||
+                (row.dados_2020 && row.dados_2020.CD_CONCEITO_PROGRAMA) ||
+                null;
+              const siglaInstituicao =
+                (row.dados_2024 && row.dados_2024.SG_ENTIDADE_ENSINO) ||
+                (row.dados_2020 && row.dados_2020.SG_ENTIDADE_ENSINO) ||
+                "";
+              const nomeDisplay = toDisplay(nome);
+              const conceitoDisplay = toDisplay(conceitoPrograma);
+              const nomeComConceito =
+                nomeDisplay !== "-" && conceitoDisplay !== "-"
+                  ? `${nomeDisplay} (${conceitoDisplay})`
+                  : nomeDisplay;
               const areaText =
                 cmp.mudou_area === false
                   ? ""
@@ -630,7 +654,10 @@
               return `<tr>
                 <td>${row.cd_programa_ies}</td>
                 <td>${categoryLabels[row.categoria] || row.categoria_rotulo || row.categoria}</td>
-                <td>${toDisplay(nome)}</td>
+                <td>
+                  <div class="program-name-main">${nomeComConceito}</div>
+                  ${siglaInstituicao ? `<div class="program-name-sub">${toDisplay(siglaInstituicao)}</div>` : ""}
+                </td>
                 <td>${areaText}</td>
                 <td>${ufText}</td>
                 <td>${sitText}</td>
