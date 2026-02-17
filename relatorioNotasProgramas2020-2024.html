@@ -3,19 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Relatório Detetive de Transições</title>
+    <title>Relatório de Mudança de Notas (2020/2024)</title>
     <link rel="icon" type="image/svg+xml" href="./Images/favicon.svg" />
     <link rel="stylesheet" href="./CSS/site.css" />
     <style>
       .report-controls {
         display: grid;
         grid-template-columns:
-          minmax(240px, 2.1fr)
-          minmax(180px, 1.25fr)
-          minmax(74px, 0.5fr)
-          minmax(110px, 0.75fr)
+          minmax(260px, 2.2fr)
+          minmax(180px, 1.2fr)
           minmax(120px, 0.8fr)
-          minmax(230px, 1.9fr);
+          minmax(230px, 1.8fr);
         align-items: end;
         gap: 8px;
         margin-bottom: 12px;
@@ -117,7 +115,7 @@
 
       .report-table th:nth-child(2),
       .report-table td:nth-child(2) {
-        width: 16%;
+        width: 18%;
       }
 
       .report-table th:nth-child(3),
@@ -127,22 +125,17 @@
 
       .report-table th:nth-child(4),
       .report-table td:nth-child(4) {
-        width: 17%;
+        width: 12%;
       }
 
       .report-table th:nth-child(5),
       .report-table td:nth-child(5) {
-        width: 10%;
+        width: 7.5%;
       }
 
       .report-table th:nth-child(6),
       .report-table td:nth-child(6) {
-        width: 9%;
-      }
-
-      .report-table th:nth-child(7),
-      .report-table td:nth-child(7) {
-        width: 10%;
+        width: 17%;
       }
 
       .report-table tbody tr:hover {
@@ -157,6 +150,21 @@
         margin-top: 2px;
         font-size: 0.74rem;
         color: rgba(10, 39, 64, 0.7);
+      }
+
+      .delta-up {
+        color: #0a6c3b;
+        font-weight: 700;
+      }
+
+      .delta-down {
+        color: #9b1c1c;
+        font-weight: 700;
+      }
+
+      .delta-neutral {
+        color: rgba(10, 39, 64, 0.76);
+        font-weight: 600;
       }
 
       .pager {
@@ -196,7 +204,6 @@
         .report-controls {
           grid-template-columns: repeat(3, minmax(180px, 1fr));
         }
-
       }
 
       @media (max-width: 920px) {
@@ -216,13 +223,14 @@
     <div class="page" id="page">
       <p class="page-home-link"><a href="./index.html">Página Principal</a></p>
       <header class="page-header">
-        <h1>Relatório de Transições</h1>
+        <h1>Relatório de Mudança de Notas</h1>
         <p>
-          Comparação detalhada por código do programa para identificar
-          continuidade, reclassificações, realocações e entradas/saídas.
+          Comparação por <code>código do programa</code> com foco em variação de
+          <code>CD_CONCEITO_PROGRAMA</code> entre 2020 e 2024.
         </p>
         <div class="disclaimer">
-          Aviso: "ausente em 2024" e "novo em 2024" não implicam automaticamente fechamento/abertura. Pode haver recodificação cadastral. As notas exibidas não são finais.
+          Aviso: mudanças de nota podem coexistir com reclassificação de área,
+          além de ajustes cadastrais. As notas exibidas não são finais.
         </div>
       </header>
 
@@ -231,11 +239,11 @@
           <h2 class="chart-title">Filtros e Resumo</h2>
           <div class="chart-wrap">
             <div class="report-controls">
-              <div class="control control-categoria">
-                <label for="filtro-categoria">Categoria</label>
+              <div class="control">
+                <label for="filtro-categoria">Categoria de Nota</label>
                 <select id="filtro-categoria"></select>
               </div>
-              <div class="control control-presenca">
+              <div class="control">
                 <label for="filtro-presenca">Presença</label>
                 <select id="filtro-presenca">
                   <option value="todas">Todas</option>
@@ -244,29 +252,15 @@
                   <option value="somente_2024">Somente 2024</option>
                 </select>
               </div>
-              <div class="control control-uf">
-                <label for="filtro-uf">UF</label>
-                <select id="filtro-uf">
-                  <option value="todas">Todas</option>
-                </select>
-              </div>
-              <div class="control control-area">
+              <div class="control">
                 <label for="filtro-area">Área</label>
                 <select id="filtro-area">
                   <option value="todas">Todas</option>
                 </select>
               </div>
-              <div class="control control-recod">
-                <label for="filtro-recod">Recodificação</label>
-                <select id="filtro-recod">
-                  <option value="todas">Todas</option>
-                  <option value="sim">Sim</option>
-                  <option value="nao">Não</option>
-                </select>
-              </div>
-              <div class="control control-busca">
+              <div class="control">
                 <label for="filtro-busca">Busca (ID, nome, IES)</label>
-                <input id="filtro-busca" type="text" placeholder="Ex.: 330020... ou BIOTECNOLOGIA" />
+                <input id="filtro-busca" type="text" placeholder="Ex.: 330020... ou BIOLOGIA" />
               </div>
             </div>
 
@@ -283,12 +277,11 @@
                 <thead>
                   <tr>
                     <th>Cód. Programa</th>
-                    <th>Categoria</th>
+                    <th>Categoria da Nota</th>
                     <th>Nome do Programa</th>
-                    <th>Área 2020 → 2024</th>
-                    <th>UF 2020 → 2024</th>
-                    <th>Situação do Programa 2020 → 2024</th>
-                    <th>Recodificação</th>
+                    <th>Nota 2020 → 2024</th>
+                    <th>Δ Nota</th>
+                    <th>Área de Avaliação</th>
                   </tr>
                 </thead>
                 <tbody id="tabela-corpo"></tbody>
@@ -322,9 +315,7 @@
         const el = {
           categoria: document.getElementById("filtro-categoria"),
           presenca: document.getElementById("filtro-presenca"),
-          uf: document.getElementById("filtro-uf"),
           area: document.getElementById("filtro-area"),
-          recod: document.getElementById("filtro-recod"),
           busca: document.getElementById("filtro-busca"),
           metaResumo: document.getElementById("meta-resumo"),
           summaryGrid: document.getElementById("summary-grid"),
@@ -335,16 +326,30 @@
           paginaTamanho: document.getElementById("pagina-tamanho"),
         };
 
-        const categoryLabels = {};
-        const categoryLabelOverrides = {
-          identica: "Continuidade estável",
-          reclassificada_area: "Reclassificação de área",
-          realocada_uf: "Realocação de UF",
-          reclassificada_area_e_uf: "Reclassificação de área e UF",
-          ausente_em_2024: "Ausente em 2024",
-          novo_em_2024: "Novo em 2024",
+        const CATEGORY_ORDER = [
+          "subiu_2_mais",
+          "subiu_1",
+          "manteve",
+          "caiu_1",
+          "caiu_2_mais",
+          "nao_existia_2020",
+          "existia_2020_ausente_2024",
+          "sem_nota_2020_ou_2024",
+          "nota_multipla_ambigua",
+        ];
+
+        const CATEGORY_LABELS = {
+          subiu_2_mais: "Subiu 2 ou mais",
+          subiu_1: "Subiu 1",
+          manteve: "Manteve",
+          caiu_1: "Caiu 1",
+          caiu_2_mais: "Caiu 2 ou mais",
+          nao_existia_2020: "Não existia em 2020",
+          existia_2020_ausente_2024: "Existia em 2020 (ausente em 2024)",
+          sem_nota_2020_ou_2024: "Sem nota em 2020 e/ou 2024",
+          nota_multipla_ambigua: "Notas múltiplas (ambíguas)",
         };
-        const categoryOrder = [];
+
         let allRows = [];
         let filteredRows = [];
         let page = 1;
@@ -370,13 +375,6 @@
           return [value];
         }
 
-        function toCodeList(areaInfo) {
-          if (!areaInfo) {
-            return [];
-          }
-          return toList(areaInfo.codigo).map((v) => String(v));
-        }
-
         function toDisplay(value) {
           if (Array.isArray(value)) {
             return value.join(" | ");
@@ -387,16 +385,56 @@
           return String(value);
         }
 
-        function statusDisplay(statusDesc, statusCode) {
-          const desc = toDisplay(statusDesc);
-          const code = toDisplay(statusCode);
-          if (desc !== "-" && code !== "-") {
-            return `${desc} (${code})`;
+        function toCodeList(areaInfo) {
+          if (!areaInfo) {
+            return [];
           }
-          if (desc !== "-") {
-            return desc;
+          return toList(areaInfo.codigo).map((v) => String(v));
+        }
+
+        function parseNoteValue(value) {
+          if (value === null || value === undefined || value === "") {
+            return null;
           }
-          return code;
+          const parsed = Number(String(value).trim().replace(",", "."));
+          if (!Number.isFinite(parsed)) {
+            return null;
+          }
+          if (Math.abs(parsed - Math.round(parsed)) < 1e-9) {
+            return Math.round(parsed);
+          }
+          return parsed;
+        }
+
+        function extractNoteSet(value) {
+          const out = new Set();
+          toList(value).forEach((v) => {
+            const parsed = parseNoteValue(v);
+            if (Number.isFinite(parsed)) {
+              out.add(parsed);
+            }
+          });
+          return [...out].sort((a, b) => a - b);
+        }
+
+        function formatNoteSet(notes) {
+          if (!Array.isArray(notes) || !notes.length) {
+            return "-";
+          }
+          return notes.map((n) => String(n)).join(" | ");
+        }
+
+        function formatDelta(delta) {
+          if (!Number.isFinite(delta)) {
+            return "";
+          }
+          if (delta > 0) {
+            return `<span class="delta-up">+${delta}</span>`;
+          }
+          if (delta < 0) {
+            return `<span class="delta-down">${delta}</span>`;
+          }
+          return `<span class="delta-neutral">0</span>`;
         }
 
         function areaToText(areaInfo) {
@@ -406,7 +444,6 @@
           const code = toDisplay(areaInfo.codigo);
           const abbr = toDisplay(areaInfo.abreviatura);
           const name = toDisplay(areaInfo.nome);
-
           if (abbr !== "-" && abbr !== "null") {
             return `${code} (${abbr})`;
           }
@@ -416,35 +453,100 @@
           return code;
         }
 
-        function buildCategoryOptions(meta) {
-          const options = [
-            '<option value="todas">Todas</option>',
-            '<option value="mudancas">Mudanças (sem continuidade estável)</option>',
-          ];
-          const defs = (meta && meta.definicoes_categoria) || {};
-          categoryOrder.length = 0;
-          Object.keys(defs).forEach((key) => {
-            const rawLabel = defs[key].rotulo || key;
-            const label = categoryLabelOverrides[key] || rawLabel;
-            categoryLabels[key] = label;
-            categoryOrder.push(key);
-            options.push(`<option value="${key}">${label}</option>`);
-          });
-          el.categoria.innerHTML = options.join("");
+        function classifyByNote(row) {
+          const present2020 = Boolean(row.presente_2020);
+          const present2024 = Boolean(row.presente_2024);
+          const dados2020 = row.dados_2020 || {};
+          const dados2024 = row.dados_2024 || {};
+
+          const notes2020 = extractNoteSet(dados2020.CD_CONCEITO_PROGRAMA);
+          const notes2024 = extractNoteSet(dados2024.CD_CONCEITO_PROGRAMA);
+
+          let categoria = "sem_nota_2020_ou_2024";
+          let delta = null;
+
+          if (!present2020 && present2024) {
+            categoria = "nao_existia_2020";
+          } else if (present2020 && !present2024) {
+            categoria = "existia_2020_ausente_2024";
+          } else if (!present2020 && !present2024) {
+            categoria = "sem_nota_2020_ou_2024";
+          } else if (!notes2020.length || !notes2024.length) {
+            categoria = "sem_nota_2020_ou_2024";
+          } else if (notes2020.length === 1 && notes2024.length === 1) {
+            delta = notes2024[0] - notes2020[0];
+            if (delta >= 2) {
+              categoria = "subiu_2_mais";
+            } else if (delta === 1) {
+              categoria = "subiu_1";
+            } else if (delta === 0) {
+              categoria = "manteve";
+            } else if (delta === -1) {
+              categoria = "caiu_1";
+            } else {
+              categoria = "caiu_2_mais";
+            }
+          } else {
+            const min20 = notes2020[0];
+            const max20 = notes2020[notes2020.length - 1];
+            const min24 = notes2024[0];
+            const max24 = notes2024[notes2024.length - 1];
+
+            if (min24 > max20) {
+              categoria = min24 - max20 >= 2 ? "subiu_2_mais" : "subiu_1";
+            } else if (max24 < min20) {
+              categoria = min20 - max24 >= 2 ? "caiu_2_mais" : "caiu_1";
+            } else if (min20 === min24 && max20 === max24) {
+              categoria = "manteve";
+            } else {
+              categoria = "nota_multipla_ambigua";
+            }
+          }
+
+          return {
+            categoria,
+            categoria_rotulo: CATEGORY_LABELS[categoria] || categoria,
+            nota_2020_set: notes2020,
+            nota_2024_set: notes2024,
+            delta_nota: delta,
+          };
         }
 
-        function buildUfOptions(rows) {
-          const set = new Set();
-          rows.forEach((row) => {
-            toList(row.comparacao && row.comparacao.uf_2020).forEach((v) => set.add(String(v)));
-            toList(row.comparacao && row.comparacao.uf_2024).forEach((v) => set.add(String(v)));
+        function enrichRows(rows) {
+          return rows.map((row) => {
+            const cls = classifyByNote(row);
+            const nome =
+              (row.dados_2024 && row.dados_2024.NM_PROGRAMA_IES) ||
+              (row.dados_2020 && row.dados_2020.NM_PROGRAMA_IES) ||
+              "-";
+            const sigla =
+              (row.dados_2024 && row.dados_2024.SG_ENTIDADE_ENSINO) ||
+              (row.dados_2020 && row.dados_2020.SG_ENTIDADE_ENSINO) ||
+              "";
+
+            return {
+              ...row,
+              categoria_nota: cls.categoria,
+              categoria_nota_rotulo: cls.categoria_rotulo,
+              nota_2020_set: cls.nota_2020_set,
+              nota_2024_set: cls.nota_2024_set,
+              delta_nota: cls.delta_nota,
+              nome_programa: nome,
+              sigla_entidade_ensino: sigla,
+            };
           });
-          const options = ['<option value="todas">Todas</option>'];
-          [...set]
-            .filter(Boolean)
-            .sort()
-            .forEach((uf) => options.push(`<option value="${uf}">${uf}</option>`));
-          el.uf.innerHTML = options.join("");
+        }
+
+        function buildCategoryOptions() {
+          const options = [
+            '<option value="todas">Todas</option>',
+            '<option value="subiu_any">Subiu (qualquer)</option>',
+            '<option value="caiu_any">Caiu (qualquer)</option>',
+          ];
+          CATEGORY_ORDER.forEach((key) => {
+            options.push(`<option value="${key}">${CATEGORY_LABELS[key] || key}</option>`);
+          });
+          el.categoria.innerHTML = options.join("");
         }
 
         function buildAreaOptions(rows) {
@@ -476,6 +578,7 @@
             registerArea(row.comparacao && row.comparacao.area_2020);
             registerArea(row.comparacao && row.comparacao.area_2024);
           });
+
           const options = ['<option value="todas">Todas</option>'];
           [...set]
             .filter(Boolean)
@@ -511,61 +614,52 @@
           return true;
         }
 
+        function matchesCategory(row, categoria) {
+          if (categoria === "todas") {
+            return true;
+          }
+          if (categoria === "subiu_any") {
+            return row.categoria_nota === "subiu_1" || row.categoria_nota === "subiu_2_mais";
+          }
+          if (categoria === "caiu_any") {
+            return row.categoria_nota === "caiu_1" || row.categoria_nota === "caiu_2_mais";
+          }
+          return row.categoria_nota === categoria;
+        }
+
         function applyFilters() {
           const categoria = el.categoria.value;
           const presenca = el.presenca.value;
-          const uf = el.uf.value;
           const area = el.area.value;
-          const recod = el.recod.value;
           const busca = normalizeText(el.busca.value);
 
           filteredRows = allRows.filter((row) => {
-            if (categoria === "mudancas") {
-              if (row.categoria === "identica") {
-                return false;
-              }
-            } else if (categoria !== "todas" && row.categoria !== categoria) {
+            if (!matchesCategory(row, categoria)) {
               return false;
             }
+
             if (!matchesPresence(row, presenca)) {
               return false;
             }
 
-            if (uf !== "todas") {
-              const ufVals = new Set([
-                ...toList(row.comparacao && row.comparacao.uf_2020).map(String),
-                ...toList(row.comparacao && row.comparacao.uf_2024).map(String),
-              ]);
-              if (!ufVals.has(uf)) {
-                return false;
-              }
-            }
-
             if (area !== "todas") {
-              const areaVals = new Set([
+              const areas = [
                 ...toCodeList(row.comparacao && row.comparacao.area_2020),
                 ...toCodeList(row.comparacao && row.comparacao.area_2024),
-              ]);
-              if (!areaVals.has(area)) {
+              ];
+              if (!areas.includes(area)) {
                 return false;
               }
-            }
-
-            if (recod === "sim" && !row.possivel_recodificacao) {
-              return false;
-            }
-            if (recod === "nao" && row.possivel_recodificacao) {
-              return false;
             }
 
             if (busca) {
               const text = normalizeText(
                 [
                   row.cd_programa_ies,
-                  row.dados_2020 && row.dados_2020.NM_PROGRAMA_IES,
-                  row.dados_2024 && row.dados_2024.NM_PROGRAMA_IES,
-                  row.dados_2020 && row.dados_2020.SG_ENTIDADE_ENSINO,
-                  row.dados_2024 && row.dados_2024.SG_ENTIDADE_ENSINO,
+                  row.nome_programa,
+                  row.sigla_entidade_ensino,
+                  ...row.nota_2020_set,
+                  ...row.nota_2024_set,
                 ]
                   .filter(Boolean)
                   .join(" ")
@@ -587,20 +681,20 @@
           const total = filteredRows.length;
           const categoryCounts = {};
           filteredRows.forEach((row) => {
-            categoryCounts[row.categoria] = (categoryCounts[row.categoria] || 0) + 1;
+            categoryCounts[row.categoria_nota] = (categoryCounts[row.categoria_nota] || 0) + 1;
           });
 
           const cards = [];
-          const categories = categoryOrder.length ? categoryOrder : Object.keys(categoryLabels);
-          categories.forEach((cat) => {
-              const count = categoryCounts[cat] || 0;
-              cards.push(
-                `<article class="summary-card">
-                  <h3>${categoryLabels[cat] || cat}</h3>
-                  <p>${count.toLocaleString("pt-BR")}</p>
-                </article>`
-              );
-            });
+          CATEGORY_ORDER.forEach((cat) => {
+            const count = categoryCounts[cat] || 0;
+            cards.push(
+              `<article class="summary-card">
+                <h3>${CATEGORY_LABELS[cat] || cat}</h3>
+                <p>${count.toLocaleString("pt-BR")}</p>
+              </article>`
+            );
+          });
+
           el.summaryGrid.innerHTML = cards.join("");
           el.metaResumo.textContent = `Registros filtrados: ${total.toLocaleString("pt-BR")} de ${allRows.length.toLocaleString("pt-BR")}.`;
         }
@@ -617,70 +711,40 @@
           const html = rows
             .map((row) => {
               const cmp = row.comparacao || {};
-              const nome =
-                (row.dados_2024 && row.dados_2024.NM_PROGRAMA_IES) ||
-                (row.dados_2020 && row.dados_2020.NM_PROGRAMA_IES) ||
-                "-";
-              const conceitoPrograma =
-                (row.dados_2024 && row.dados_2024.CD_CONCEITO_PROGRAMA) ||
-                (row.dados_2020 && row.dados_2020.CD_CONCEITO_PROGRAMA) ||
-                null;
-              const siglaInstituicao =
-                (row.dados_2024 && row.dados_2024.SG_ENTIDADE_ENSINO) ||
-                (row.dados_2020 && row.dados_2020.SG_ENTIDADE_ENSINO) ||
-                "";
-              const nomeDisplay = toDisplay(nome);
-              const conceitoDisplay = toDisplay(conceitoPrograma);
-              const nomeComConceito =
-                nomeDisplay !== "-" && conceitoDisplay !== "-"
-                  ? `${nomeDisplay} (${conceitoDisplay})`
-                  : nomeDisplay;
-              const areaText =
-                cmp.mudou_area === false
-                  ? ""
-                  : `${areaToText(cmp.area_2020)} → ${areaToText(cmp.area_2024)}`;
-              const ufText =
-                cmp.mudou_uf === false
-                  ? ""
-                  : `${toDisplay(cmp.uf_2020)} → ${toDisplay(cmp.uf_2024)}`;
-              const sitText =
-                cmp.mudou_situacao === false
-                  ? ""
-                  : `${statusDisplay(cmp.sit_descricao_2020, cmp.sit_2020)} → ${statusDisplay(cmp.sit_descricao_2024, cmp.sit_2024)}`;
-              const recod = row.possivel_recodificacao
-                ? `Sim (${row.candidatos_recodificacao.length})`
-                : "Não";
+              const areaAtual = areaToText(cmp.area_2024);
+              const areaFallback = areaToText(cmp.area_2020);
+              const areaText = areaAtual !== "-" ? areaAtual : areaFallback;
+              const notaText = `${formatNoteSet(row.nota_2020_set)} → ${formatNoteSet(row.nota_2024_set)}`;
+              const deltaText = formatDelta(row.delta_nota) || "-";
 
               return `<tr>
                 <td>${row.cd_programa_ies}</td>
-                <td>${categoryLabels[row.categoria] || row.categoria_rotulo || row.categoria}</td>
+                <td>${row.categoria_nota_rotulo}</td>
                 <td>
-                  <div class="program-name-main">${nomeComConceito}</div>
-                  ${siglaInstituicao ? `<div class="program-name-sub">${toDisplay(siglaInstituicao)}</div>` : ""}
+                  <div class="program-name-main">${toDisplay(row.nome_programa)}</div>
+                  ${
+                    row.sigla_entidade_ensino
+                      ? `<div class="program-name-sub">${toDisplay(row.sigla_entidade_ensino)}</div>`
+                      : ""
+                  }
                 </td>
+                <td>${notaText}</td>
+                <td>${deltaText}</td>
                 <td>${areaText}</td>
-                <td>${ufText}</td>
-                <td>${sitText}</td>
-                <td>${recod}</td>
               </tr>`;
             })
             .join("");
 
-          el.tabelaCorpo.innerHTML = html || "<tr><td colspan='7'>Nenhum registro para os filtros.</td></tr>";
+          el.tabelaCorpo.innerHTML = html || "<tr><td colspan='6'>Nenhum registro para os filtros.</td></tr>";
           el.paginaInfo.textContent = `Página ${page} de ${totalPages}`;
           el.paginaAnterior.disabled = page <= 1;
           el.paginaProxima.disabled = page >= totalPages;
         }
 
         function wireEvents() {
-          [
-            el.categoria,
-            el.presenca,
-            el.uf,
-            el.area,
-            el.recod,
-            el.busca,
-          ].forEach((node) => node.addEventListener("input", applyFilters));
+          [el.categoria, el.presenca, el.area, el.busca].forEach((node) =>
+            node.addEventListener("input", applyFilters)
+          );
 
           el.paginaAnterior.addEventListener("click", () => {
             if (page > 1) {
@@ -722,16 +786,15 @@
             return resp.json();
           })
           .then((payload) => {
-            buildCategoryOptions(payload.metadados || {});
-            allRows = payload.programas || [];
-            buildUfOptions(allRows);
+            const baseRows = Array.isArray(payload.programas) ? payload.programas : [];
+            allRows = enrichRows(baseRows);
+            buildCategoryOptions();
             buildAreaOptions(allRows);
             wireEvents();
             applyFilters();
           })
-          .catch((err) => {
-            el.metaResumo.textContent = "Erro ao carregar dados.";
-            showError(String(err && err.message ? err.message : err));
+          .catch((error) => {
+            showError(error.message || String(error));
           });
       })();
     </script>
