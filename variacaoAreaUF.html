@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Variação por Área e Estado</title>
+    <link rel="icon" type="image/svg+xml" href="./Images/favicon.svg" />
+    <link rel="stylesheet" href="./CSS/site.css" />
+  </head>
+  <body>
+    <div class="page" id="page">
+      <p class="page-home-link"><a href="./index.html">Página Principal</a></p>
+      <header class="page-header">
+        <h1>Variação por Área e Estado</h1>
+        <p>Variação de programas por combinação entre estado e área da CAPES.</p>
+        <div class="disclaimer">
+          Aviso: visualização criada a partir dos <a href="https://dadosabertos.capes.gov.br/">dados abertos da CAPES</a> (bases 2020 e 2024). Os números podem divergir de relatórios oficiais conforme filtros e critérios de consolidação.
+        </div>
+      </header>
+
+      <main class="page-content">
+        <section class="chart-section">
+          <h2 class="chart-title" id="chart-title-heatmap">Variação por Área e Estado (2024 - 2020)</h2>
+          <div class="chart-wrap">
+            <div class="chart-controls">
+              <label for="metric-select-heatmap">Métrica:</label>
+              <select id="metric-select-heatmap">
+                <option value="variacao_absoluta">Variação absoluta (2024 - 2020)</option>
+                <option value="variacao_percentual">Variação percentual (2024 - 2020)</option>
+              </select>
+            </div>
+            <div id="chart-uf-area-heatmap" class="plotly-chart"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+    <footer class="site-footnote">
+      <a href="http://linktr.ee/rafaeldcsantos">Rafael Santos</a>
+    </footer>
+    <script src="./JS/plotly.min.js"></script>
+    <script>
+      (function () {
+        const heatmapDiv = document.getElementById("chart-uf-area-heatmap");
+        const metricSelect = document.getElementById("metric-select-heatmap");
+        const heatmapTitle = document.getElementById("chart-title-heatmap");
+
+        const metricConfig = {
+          variacao_absoluta: {
+            label: "Variação absoluta (2024 - 2020)",
+            isPercent: false,
+            colorscale: [
+              [0.0, "#b2182b"],
+              [0.5, "#f7f7f7"],
+              [1.0, "#2166ac"],
+            ],
+          },
+          variacao_percentual: {
+            label: "Variação percentual (2024 - 2020)",
+            isPercent: true,
+            colorscale: [
+              [0.0, "#b2182b"],
+              [0.5, "#f7f7f7"],
+              [1.0, "#2166ac"],
+            ],
+          },
+        };
+
+        const formatInt = new Intl.NumberFormat("pt-BR");
+        const formatPct = new Intl.NumberFormat("pt-BR", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+
+        function formatMetric(value, isPercent) {
+          if (!Number.isFinite(value)) {
+            return "N/A";
+          }
+          if (isPercent) {
+            return `${formatPct.format(value)}%`;
+          }
+          return formatInt.format(value);
+        }
+
+        function showError(message) {
+          const box = document.createElement("div");
+          box.className = "error-box";
+          box.textContent = message;
+          heatmapDiv.parentElement.appendChild(box);
+        }
+
+        function percentile(sortedValues, p) {
+          if (!sortedValues.length) {
+            return undefined;
+          }
+          const index = (sortedValues.length - 1) * p;
+          const low = Math.floor(index);
+          const high = Math.ceil(index);
+          if (low === high) {
+            return sortedValues[low];
+          }
+          const w = index - low;
+          return sortedValues[low] + (sortedValues[high] - sortedValues[low]) * w;
+        }
+
+        function computeDivergingDomain(values) {
+          const clean = values.filter((v) => Number.isFinite(v));
+          if (!clean.length) {
+            return { zmin: -1, zmax: 1 };
+          }
+          const absSorted = clean.map((v) => Math.abs(v)).sort((a, b) => a - b);
+          let maxAbs = percentile(absSorted, 0.95);
+          if (!Number.isFinite(maxAbs) || maxAbs <= 0) {
+            maxAbs = Math.max(...absSorted);
+          }
+          if (!Number.isFinite(maxAbs) || maxAbs <= 0) {
+            maxAbs = 1;
+          }
+          return { zmin: -maxAbs, zmax: maxAbs };
+        }
+
+        if (typeof Plotly === "undefined") {
+          showError("Plotly não foi carregado. Coloque o arquivo em ./JS/plotly.min.js.");
+          return;
+        }
+
+        Promise.all([
+          fetch("./Data/plot-growth-uf-area-2020-2024.json").then((r) => r.json()),
+          fetch("./Data/capes-area-avaliacao-map.json").then((r) => r.json()),
+        ])
+          .then(([data, areaMapData]) => {
+            const ufArea = data.uf_area || [];
+            const ufs = (data.metadados && data.metadados.ufs) || [];
+            const areasMeta = (data.metadados && data.metadados.areas) || [];
+
+            const areaCodeToName = {};
+            const areaCodeToAbbr = {};
+
+            ((areaMapData && areaMapData.areas) || []).forEach((area) => {
+              const code = String(area.codigo);
+              const name = area.nome != null ? String(area.nome) : "";
+              const abbr = area.abreviatura != null ? String(area.abreviatura).trim() : "";
+              if (name) {
+                areaCodeToName[code] = name;
+              }
+              if (abbr) {
+                areaCodeToAbbr[code] = abbr;
+              }
+            });
+
+            areasMeta.forEach((area) => {
+              const code = String(area.codigo);
+              if (!areaCodeToName[code]) {
+                areaCodeToName[code] = String(area.nome);
+              }
+            });
+
+            const areaCodes = areasMeta.map((a) => String(a.codigo));
+            const areaLabels = areaCodes.map((code) => areaCodeToAbbr[code] || code);
+
+            const ufAreaMap = {};
+            ufArea.forEach((row) => {
+              const uf = String(row.sg_uf_programa);
+              const code = String(row.cd_area_avaliacao);
+              ufAreaMap[`${uf}__${code}`] = row;
+            });
+
+            function render(metricKey) {
+              const config = metricConfig[metricKey];
+              if (!config) {
+                return;
+              }
+
+              if (heatmapTitle) {
+                heatmapTitle.textContent = `Variação por Área e Estado - ${config.label}`;
+              }
+
+              const zMatrix = ufs.map((uf) =>
+                areaCodes.map((code) => {
+                  const row = ufAreaMap[`${uf}__${code}`];
+                  const value = row ? Number(row[metricKey]) : 0;
+                  return Number.isFinite(value) ? value : null;
+                })
+              );
+
+              const hoverMatrix = ufs.map((uf) =>
+                areaCodes.map((code) => {
+                  const row = ufAreaMap[`${uf}__${code}`];
+                  const count2020 = row ? Number(row.quantidade_2020) : 0;
+                  const count2024 = row ? Number(row.quantidade_2024) : 0;
+                  const metricValue = row ? Number(row[metricKey]) : 0;
+                  const areaName = areaCodeToName[code] || code;
+                  const areaAbbr = areaCodeToAbbr[code] || code;
+                  return [
+                    uf,
+                    areaAbbr,
+                    areaName,
+                    count2020,
+                    count2024,
+                    formatMetric(metricValue, config.isPercent),
+                  ];
+                })
+              );
+
+              const flatValues = zMatrix.flat().filter((v) => Number.isFinite(v));
+              const domain = computeDivergingDomain(flatValues);
+
+              const heatmapTrace = {
+                type: "heatmap",
+                x: areaLabels,
+                y: ufs,
+                z: zMatrix,
+                zmin: domain.zmin,
+                zmax: domain.zmax,
+                zmid: 0,
+                colorscale: config.colorscale,
+                colorbar: { title: config.label },
+                customdata: hoverMatrix,
+                hovertemplate:
+                  "<b>UF %{customdata[0]} | Área %{customdata[1]}</b><br>" +
+                  "%{customdata[2]}<br>" +
+                  "2020: %{customdata[3]}<br>" +
+                  "2024: %{customdata[4]}<br>" +
+                  `${config.label}: %{customdata[5]}<extra></extra>`,
+              };
+
+              const heatmapLayout = {
+                margin: { t: 16, r: 16, b: 64, l: 52 },
+                paper_bgcolor: "rgba(0,0,0,0)",
+                plot_bgcolor: "rgba(0,0,0,0)",
+                xaxis: {
+                  title: "Área CAPES (abreviatura)",
+                  tickangle: -45,
+                  automargin: true,
+                  tickfont: { size: 9 },
+                },
+                yaxis: { title: "UF", automargin: true },
+              };
+
+              Plotly.react(heatmapDiv, [heatmapTrace], heatmapLayout, {
+                responsive: true,
+                displaylogo: false,
+              });
+            }
+
+            render(metricSelect.value);
+            metricSelect.addEventListener("change", (event) => {
+              render(event.target.value);
+            });
+          })
+          .catch((error) => {
+            showError(`Falha ao carregar os arquivos locais: ${error.message}`);
+          });
+      })();
+    </script>
+  </body>
+</html>

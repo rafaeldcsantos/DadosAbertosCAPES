@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Transições por Área (2020/2024)</title>
+    <link rel="icon" type="image/svg+xml" href="./Images/favicon.svg" />
+    <link rel="stylesheet" href="./CSS/site.css" />
+    <style>
+      #chart-sankey-area-transicao {
+        width: 1280px;
+        height: 900px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page" id="page">
+      <p class="page-home-link"><a href="./index.html">Página Principal</a></p>
+      <header class="page-header">
+        <h1>Transições por Área (2020/2024)</h1>
+        <p>
+          Fluxos de programas entre áreas CAPES usando <code>CD_PROGRAMA_IES</code>,
+          incluindo programas novos em 2024 e programas ausentes em 2024.
+        </p>
+        <div class="disclaimer">
+          Aviso: os fluxos "novo em 2024" e "deixou de existir" podem incluir
+          casos de recodificação cadastral, além de abertura/fechamento.
+        </div>
+      </header>
+
+      <main class="page-content">
+        <section class="chart-section">
+          <h2 class="chart-title" id="chart-title-sankey">Fluxo entre Áreas (Sankey)</h2>
+          <div class="chart-wrap">
+            <div class="chart-controls">
+              <label for="view-select-sankey">Visualização:</label>
+              <select id="view-select-sankey">
+                <option value="mudancas_entrada_saida" selected>Mudanças + entradas/saídas</option>
+                <option value="todas">Todas as transições</option>
+                <option value="somente_mudanca_area">Somente mudança de área</option>
+                <option value="somente_novos">Somente novos em 2024</option>
+                <option value="somente_deixaram">Somente programas que deixaram de existir</option>
+                <option value="somente_estavel">Somente continuidade estável</option>
+              </select>
+
+              <label for="min-flow-sankey">Fluxo mínimo:</label>
+              <select id="min-flow-sankey">
+                <option value="1" selected>1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="5">5</option>
+                <option value="10">10</option>
+              </select>
+            </div>
+
+            <div id="sankey-summary" class="meta-line">Carregando...</div>
+            <div id="chart-sankey-area-transicao" class="plotly-chart"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+    <footer class="site-footnote">
+      <a href="http://linktr.ee/rafaeldcsantos">Rafael Santos</a>
+    </footer>
+
+    <script src="./JS/plotly.min.js"></script>
+    <script>
+      (function () {
+        const chartDiv = document.getElementById("chart-sankey-area-transicao");
+        const viewSelect = document.getElementById("view-select-sankey");
+        const minFlowSelect = document.getElementById("min-flow-sankey");
+        const summaryEl = document.getElementById("sankey-summary");
+        const titleEl = document.getElementById("chart-title-sankey");
+
+        const DATA_URL = "./Data/area-transicoes-2020-2024-sankey.json";
+
+        const viewConfig = {
+          mudancas_entrada_saida: {
+            label: "Mudanças + entradas/saídas",
+            allow: new Set(["mudanca_area", "novo_programa", "programa_deixou_existir"]),
+          },
+          todas: {
+            label: "Todas as transições",
+            allow: new Set(["estavel", "mudanca_area", "novo_programa", "programa_deixou_existir"]),
+          },
+          somente_mudanca_area: {
+            label: "Somente mudança de área",
+            allow: new Set(["mudanca_area"]),
+          },
+          somente_novos: {
+            label: "Somente novos em 2024",
+            allow: new Set(["novo_programa"]),
+          },
+          somente_deixaram: {
+            label: "Somente programas que deixaram de existir",
+            allow: new Set(["programa_deixou_existir"]),
+          },
+          somente_estavel: {
+            label: "Somente continuidade estável",
+            allow: new Set(["estavel"]),
+          },
+        };
+
+        const flowLabel = {
+          estavel: "Continuidade estável",
+          mudanca_area: "Mudança de área",
+          novo_programa: "Novo em 2024",
+          programa_deixou_existir: "Deixou de existir",
+        };
+
+        const linkColor = {
+          estavel: "rgba(120, 120, 120, 0.35)",
+          mudanca_area: "rgba(10, 98, 148, 0.58)",
+          novo_programa: "rgba(34, 167, 88, 0.58)",
+          programa_deixou_existir: "rgba(204, 68, 68, 0.60)",
+        };
+
+        function showError(message) {
+          const box = document.createElement("div");
+          box.className = "error-box";
+          box.textContent = message;
+          chartDiv.parentElement.appendChild(box);
+        }
+
+        function nodeColor(node) {
+          if (node.tipo === "especial") {
+            if (node.id.indexOf("orig:NAO_EXISTIA_2020") === 0) {
+              return "rgba(34, 167, 88, 0.85)";
+            }
+            return "rgba(204, 68, 68, 0.85)";
+          }
+          if (node.lado === "origem") {
+            return "rgba(10, 98, 148, 0.85)";
+          }
+          return "rgba(20, 126, 95, 0.85)";
+        }
+
+        function render(payload) {
+          const links = Array.isArray(payload.links) ? payload.links : [];
+          const nodes = Array.isArray(payload.nodes) ? payload.nodes : [];
+
+          const viewKey = viewSelect.value in viewConfig ? viewSelect.value : "mudancas_entrada_saida";
+          const minFlow = Number(minFlowSelect.value) || 1;
+          const cfg = viewConfig[viewKey];
+
+          const activeLinks = links.filter(
+            (lnk) => cfg.allow.has(lnk.tipo_fluxo) && Number(lnk.value) >= minFlow
+          );
+
+          const usedNodeIdx = new Set();
+          activeLinks.forEach((lnk) => {
+            usedNodeIdx.add(Number(lnk.source));
+            usedNodeIdx.add(Number(lnk.target));
+          });
+
+          const oldToNew = new Map();
+          const plotNodes = [];
+
+          const sortedIdx = [...usedNodeIdx].sort((a, b) => a - b);
+          sortedIdx.forEach((oldIdx, newIdx) => {
+            oldToNew.set(oldIdx, newIdx);
+            plotNodes.push(nodes[oldIdx]);
+          });
+
+          const leftIdx = [];
+          const rightIdx = [];
+          plotNodes.forEach((node, i) => {
+            if (node.lado === "origem") {
+              leftIdx.push(i);
+            } else {
+              rightIdx.push(i);
+            }
+          });
+
+          const nodeX = new Array(plotNodes.length).fill(0);
+          leftIdx.forEach((idx, i) => {
+            nodeX[idx] = 0.01;
+          });
+          rightIdx.forEach((idx, i) => {
+            nodeX[idx] = 0.99;
+          });
+
+          const plotLinks = activeLinks
+            .map((lnk) => {
+              const source = oldToNew.get(Number(lnk.source));
+              const target = oldToNew.get(Number(lnk.target));
+              if (source === undefined || target === undefined) {
+                return null;
+              }
+              return {
+                source: source,
+                target: target,
+                value: Number(lnk.value),
+                tipo_fluxo: lnk.tipo_fluxo,
+                color: linkColor[lnk.tipo_fluxo] || "rgba(120,120,120,0.4)",
+              };
+            })
+            .filter(Boolean);
+
+          const totalFiltered = plotLinks.reduce((acc, lnk) => acc + Number(lnk.value), 0);
+          const countByType = plotLinks.reduce((acc, lnk) => {
+            const k = lnk.tipo_fluxo;
+            acc[k] = (acc[k] || 0) + Number(lnk.value);
+            return acc;
+          }, {});
+
+          summaryEl.textContent =
+            `Fluxos exibidos: ${totalFiltered.toLocaleString("pt-BR")} programas ` +
+            `(estável: ${(countByType.estavel || 0).toLocaleString("pt-BR")}, ` +
+            `mudança de área: ${(countByType.mudanca_area || 0).toLocaleString("pt-BR")}, ` +
+            `novos: ${(countByType.novo_programa || 0).toLocaleString("pt-BR")}, ` +
+            `deixaram de existir: ${(countByType.programa_deixou_existir || 0).toLocaleString("pt-BR")}).`;
+
+          titleEl.textContent = `Fluxo entre Áreas (Sankey) - ${cfg.label}`;
+
+          const trace = {
+            type: "sankey",
+            arrangement: "snap",
+            node: {
+              pad: 2,
+              thickness: 6,
+              label: plotNodes.map((n) => n.label),
+              x: nodeX,
+              color: plotNodes.map(nodeColor),
+              customdata: plotNodes.map((n) => n.label_longo || n.label),
+              hovertemplate: "%{customdata}<extra></extra>",
+            },
+            link: {
+              source: plotLinks.map((l) => l.source),
+              target: plotLinks.map((l) => l.target),
+              value: plotLinks.map((l) => l.value),
+              color: plotLinks.map((l) => l.color),
+              customdata: plotLinks.map((l) => flowLabel[l.tipo_fluxo] || l.tipo_fluxo),
+              hovertemplate:
+                "<b>%{source.label}</b> → <b>%{target.label}</b><br>" +
+                "Programas: %{value}<br>" +
+                "Tipo: %{customdata}<extra></extra>",
+            },
+          };
+
+          const layout = {
+            width: 1280,
+            height: 900,
+            margin: { t: 8, r: 8, b: 8, l: 8 },
+            font: { size: 11, color: "#0a2740" },
+            paper_bgcolor: "rgba(255,255,255,0)",
+            plot_bgcolor: "rgba(255,255,255,0)",
+          };
+
+          Plotly.react(chartDiv, [trace], layout, {
+            responsive: false,
+            displayModeBar: true,
+            modeBarButtonsToRemove: ["lasso2d", "select2d"],
+          });
+        }
+
+        if (typeof Plotly === "undefined") {
+          showError("Plotly não foi carregado. Coloque o arquivo em ./JS/plotly.min.js.");
+          return;
+        }
+
+        fetch(DATA_URL)
+          .then((resp) => {
+            if (!resp.ok) {
+              throw new Error(`Falha ao carregar ${DATA_URL}: HTTP ${resp.status}`);
+            }
+            return resp.json();
+          })
+          .then((payload) => {
+            if (!payload || !Array.isArray(payload.links) || !Array.isArray(payload.nodes)) {
+              throw new Error("Formato de JSON inválido para Sankey.");
+            }
+
+            function rerender() {
+              render(payload);
+            }
+
+            viewSelect.addEventListener("change", rerender);
+            minFlowSelect.addEventListener("change", rerender);
+            rerender();
+          })
+          .catch((err) => {
+            showError(String(err && err.message ? err.message : err));
+          });
+      })();
+    </script>
+  </body>
+</html>

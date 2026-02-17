@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Programas no Brasil</title>
+    <link rel="icon" type="image/svg+xml" href="./Images/favicon.svg" />
+    <link rel="stylesheet" href="./CSS/site.css" />
+  </head>
+  <body>
+    <div class="page" id="page">
+      <p class="page-home-link"><a href="./index.html">Página Principal</a></p>
+      <header class="page-header">
+        <h1>Número de Programas de Pós-Graduação no Brasil</h1>
+        <p>Número de PPGs em 2020 e 2024, variação absoluta e percentual entre estes dois anos, considerando todas as áreas da CAPES.</p>
+        <div class="disclaimer">
+          Aviso: visualização criada a partir dos <a href="https://dadosabertos.capes.gov.br/">dados abertos da CAPES</a> (bases 2020 e 2024). Os números podem divergir de relatórios oficiais conforme filtros e critérios de consolidação.
+        </div>
+      </header>
+
+      <main class="page-content">
+        <section class="chart-section">
+          <h2 class="chart-title">Programas por UF (2020 x 2024)</h2>
+          <div class="chart-wrap">
+            <div class="chart-controls">
+              <label for="metric-select">Métrica:</label>
+              <select id="metric-select">
+                <option value="quantidade_2024">Quantidade de programas (2024)</option>
+                <option value="quantidade_2020">Quantidade de programas (2020)</option>
+                <option value="delta_abs_2020_2024">Variação absoluta (2024 - 2020)</option>
+                <option value="delta_pct_2020_2024">Variação percentual (2024 - 2020)</option>
+              </select>
+            </div>
+            <div id="chart-programas-distribuicao" class="plotly-chart"></div>
+          </div>
+        </section>
+
+        <section class="chart-section">
+          <h2 class="chart-title" id="top10-title">Top 10 UFs pela Métrica Selecionada</h2>
+          <div class="chart-wrap">
+            <div id="chart-programas-evolucao" class="plotly-chart"></div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+    <footer class="site-footnote">
+      <a href="http://linktr.ee/rafaeldcsantos">Rafael Santos</a>
+    </footer>
+    <script src="./JS/plotly.min.js"></script>
+    <script>
+      (function () {
+        const mapDiv = document.getElementById("chart-programas-distribuicao");
+        const topDiv = document.getElementById("chart-programas-evolucao");
+        const topTitle = document.getElementById("top10-title");
+        const metricSelect = document.getElementById("metric-select");
+        const escalaAmareloVerdeAzulBandeira = [
+          [0.0, "#ffd200"],
+          [0.4, "#009c3b"],
+          [1.0, "#0057b8"],
+        ];
+
+        function toFiniteNumber(value) {
+          const parsed = Number(value);
+          return Number.isFinite(parsed) ? parsed : null;
+        }
+
+        function computeDeltaPercent(endValue, startValue) {
+          const end = toFiniteNumber(endValue);
+          const start = toFiniteNumber(startValue);
+          if (!Number.isFinite(end) || !Number.isFinite(start) || start === 0) {
+            return null;
+          }
+          return ((end - start) / start) * 100;
+        }
+
+        const metricConfig = {
+          quantidade_2024: {
+            label: "Programas em 2024",
+            colorbarTitle: "Programas (2024)",
+            colorscale: escalaAmareloVerdeAzulBandeira,
+            isDiverging: false,
+            isPercent: false,
+            value: (row) => toFiniteNumber(row.quantidade_2024),
+          },
+          quantidade_2020: {
+            label: "Programas em 2020",
+            colorbarTitle: "Programas (2020)",
+            colorscale: escalaAmareloVerdeAzulBandeira,
+            isDiverging: false,
+            isPercent: false,
+            value: (row) => toFiniteNumber(row.quantidade_2020),
+          },
+          delta_abs_2020_2024: {
+            label: "Variação absoluta (2024 - 2020)",
+            colorbarTitle: "Delta (2024-2020)",
+            colorscale: escalaAmareloVerdeAzulBandeira,
+            isDiverging: true,
+            isPercent: false,
+            value: (row) => {
+              const end = toFiniteNumber(row.quantidade_2024);
+              const start = toFiniteNumber(row.quantidade_2020);
+              if (!Number.isFinite(end) || !Number.isFinite(start)) {
+                return null;
+              }
+              return end - start;
+            },
+          },
+          delta_pct_2020_2024: {
+            label: "Variação percentual (2024 - 2020)",
+            colorbarTitle: "Delta % (2024-2020)",
+            colorscale: escalaAmareloVerdeAzulBandeira,
+            isDiverging: true,
+            isPercent: true,
+            value: (row) => computeDeltaPercent(row.quantidade_2024, row.quantidade_2020),
+          },
+        };
+
+        const formatNumber = new Intl.NumberFormat("pt-BR");
+        const formatPercent = new Intl.NumberFormat("pt-BR", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+
+        function formatMetricValue(value, isPercent) {
+          if (!Number.isFinite(value)) {
+            return "N/A";
+          }
+          if (isPercent) {
+            return `${formatPercent.format(value)}%`;
+          }
+          return formatNumber.format(value);
+        }
+
+        function showError(message) {
+          const box = document.createElement("div");
+          box.className = "error-box";
+          box.textContent = message;
+          mapDiv.parentElement.appendChild(box);
+        }
+
+        if (typeof Plotly === "undefined") {
+          showError("Plotly não foi carregado. Coloque o arquivo em ./JS/plotly.min.js.");
+          return;
+        }
+
+        function normalizeUf(value) {
+          return String(value || "")
+            .trim()
+            .toUpperCase()
+            .replace(/^BR[-_]?/, "");
+        }
+
+        function percentile(sortedValues, p) {
+          if (!sortedValues.length) {
+            return undefined;
+          }
+          const index = (sortedValues.length - 1) * p;
+          const low = Math.floor(index);
+          const high = Math.ceil(index);
+          if (low === high) {
+            return sortedValues[low];
+          }
+          const weight = index - low;
+          return sortedValues[low] + (sortedValues[high] - sortedValues[low]) * weight;
+        }
+
+        function computeColorDomain(values, isDiverging) {
+          const cleanValues = values.filter((value) => Number.isFinite(value));
+          if (!cleanValues.length) {
+            return { zmin: undefined, zmax: undefined, zmid: isDiverging ? 0 : undefined };
+          }
+
+          const sorted = [...cleanValues].sort((a, b) => a - b);
+          if (isDiverging) {
+            const absSorted = sorted.map((value) => Math.abs(value)).sort((a, b) => a - b);
+            let maxAbs = percentile(absSorted, 0.95);
+            if (!Number.isFinite(maxAbs) || maxAbs <= 0) {
+              maxAbs = Math.max(...absSorted);
+            }
+            if (!Number.isFinite(maxAbs) || maxAbs <= 0) {
+              maxAbs = 1;
+            }
+            return { zmin: -maxAbs, zmax: maxAbs, zmid: 0 };
+          }
+
+          let zmin = percentile(sorted, 0.05);
+          let zmax = percentile(sorted, 0.95);
+          if (!Number.isFinite(zmin) || !Number.isFinite(zmax) || zmax <= zmin) {
+            zmin = sorted[0];
+            zmax = sorted[sorted.length - 1];
+          }
+          return { zmin, zmax, zmid: undefined };
+        }
+
+        function getFeatureRawValue(feature, key) {
+          if (key === "id") {
+            return feature.id;
+          }
+          return feature.properties ? feature.properties[key] : undefined;
+        }
+
+        function chooseFeatureKey(geojson, knownUfs) {
+          const features = geojson.features || [];
+          const keys = ["id", "sigla", "SIGLA", "uf", "UF", "abbr", "abbrev", "codigo_uf", "cd_uf"];
+          let best = { key: "id", matches: 0 };
+
+          keys.forEach((key) => {
+            let matches = 0;
+            features.forEach((feature) => {
+              const uf = normalizeUf(getFeatureRawValue(feature, key));
+              if (knownUfs.has(uf)) {
+                matches += 1;
+              }
+            });
+            if (matches > best.matches) {
+              best = { key, matches };
+            }
+          });
+
+          return best;
+        }
+
+        Promise.all([
+          fetch("./Data/plot-growth-2020-2024.json").then((r) => r.json()),
+          fetch("./JS/br_states.json").then((r) => r.json()),
+        ])
+          .then(([growthData, geojson]) => {
+            const rows = (growthData.linhas || []).filter(
+              (row) => row.dimensao_codigo === "SG_UF_PROGRAMA"
+            );
+            const byUf = {};
+            rows.forEach((row) => {
+              byUf[normalizeUf(row.valor)] = row;
+            });
+            const knownUfs = new Set(Object.keys(byUf));
+            const selectedKey = chooseFeatureKey(geojson, knownUfs);
+            const featureidkey = selectedKey.key === "id" ? undefined : `properties.${selectedKey.key}`;
+
+            function render(metricKey) {
+              const config = metricConfig[metricKey];
+              if (!config) {
+                return;
+              }
+              if (topTitle) {
+                topTitle.textContent = `Top 10 UFs - ${config.label}`;
+              }
+              const locations = [];
+              const zValues = [];
+              const customData = [];
+
+              (geojson.features || []).forEach((feature) => {
+                const rawId = getFeatureRawValue(feature, selectedKey.key);
+                const uf = normalizeUf(rawId);
+                const row = byUf[uf];
+                if (!row) {
+                  return;
+                }
+
+                const metricValue = config.value(row);
+                if (!Number.isFinite(metricValue)) {
+                  return;
+                }
+
+                const quantidade2020 = toFiniteNumber(row.quantidade_2020);
+                const quantidade2024 = toFiniteNumber(row.quantidade_2024);
+                locations.push(rawId);
+                zValues.push(metricValue);
+                customData.push([
+                  uf,
+                  formatMetricValue(quantidade2020, false),
+                  formatMetricValue(quantidade2024, false),
+                  config.label,
+                  formatMetricValue(metricValue, config.isPercent),
+                ]);
+              });
+
+              const hoverTemplate =
+                "<b>UF %{customdata[0]}</b><br>" +
+                "2020: %{customdata[1]}<br>" +
+                "2024: %{customdata[2]}<br>" +
+                "%{customdata[3]}: %{customdata[4]}<extra></extra>";
+
+              const domain = computeColorDomain(zValues, config.isDiverging);
+
+              const mapTrace = {
+                type: "choropleth",
+                geojson,
+                locations,
+                z: zValues,
+                featureidkey,
+                colorscale: config.colorscale,
+                zmin: domain.zmin,
+                zmax: domain.zmax,
+                zmid: domain.zmid,
+                reversescale: false,
+                colorbar: { title: config.colorbarTitle },
+                marker: {
+                  line: { color: "rgba(255,255,255,0.85)", width: 0.7 },
+                },
+                customdata: customData,
+                hovertemplate: hoverTemplate,
+              };
+
+              const mapLayout = {
+                margin: { t: 8, r: 0, b: 0, l: 0 },
+                paper_bgcolor: "rgba(0,0,0,0)",
+                plot_bgcolor: "rgba(0,0,0,0)",
+                geo: {
+                  fitbounds: "locations",
+                  visible: false,
+                  bgcolor: "rgba(0,0,0,0)",
+                },
+              };
+
+              Plotly.react(mapDiv, [mapTrace], mapLayout, {
+                responsive: true,
+                displaylogo: false,
+                modeBarButtonsToRemove: [
+                  "lasso2d",
+                  "select2d",
+                  "autoScale2d",
+                  "resetScale2d",
+                  "zoomInGeo",
+                  "zoomOutGeo",
+                ],
+              });
+
+              const sortedRows = rows
+                .map((row) => ({ row, metricValue: config.value(row) }))
+                .filter((item) => Number.isFinite(item.metricValue))
+                .sort((a, b) => b.metricValue - a.metricValue)
+                .slice(0, 10)
+                .reverse();
+
+              const x = sortedRows.map((item) => item.metricValue);
+              const y = sortedRows.map((item) => item.row.valor);
+              const text = sortedRows.map((item) => formatMetricValue(item.metricValue, config.isPercent));
+              const barHoverData = [...text];
+
+              const barTrace = {
+                type: "bar",
+                orientation: "h",
+                x,
+                y,
+                text,
+                textposition: "outside",
+                customdata: barHoverData,
+                marker: {
+                  color: config.isDiverging ? "#0a6294" : "#0d7ebf",
+                  line: { color: "rgba(8,84,127,0.5)", width: 1 },
+                },
+                hovertemplate:
+                  "<b>UF %{y}</b><br>" + `${config.label}: %{customdata}<extra></extra>`,
+              };
+
+              const barLayout = {
+                margin: { t: 18, r: 30, b: 36, l: 66 },
+                paper_bgcolor: "rgba(0,0,0,0)",
+                plot_bgcolor: "rgba(0,0,0,0)",
+                xaxis: { title: config.label, zeroline: config.isDiverging },
+                yaxis: { title: "" },
+              };
+
+              Plotly.react(topDiv, [barTrace], barLayout, {
+                responsive: true,
+                displaylogo: false,
+              });
+            }
+
+            render(metricSelect.value);
+            metricSelect.addEventListener("change", (event) => {
+              render(event.target.value);
+            });
+          })
+          .catch((error) => {
+            showError(`Falha ao carregar os arquivos locais: ${error.message}`);
+          });
+      })();
+    </script>
+  </body>
+</html>

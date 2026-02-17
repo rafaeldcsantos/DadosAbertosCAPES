@@ -1,0 +1,439 @@
+{
+  "metadados": {
+    "descricao": "Mapeamento de códigos numéricos para nomes das áreas de avaliação da CAPES.",
+    "campo_codigo": "CD_AREA_AVALIACAO",
+    "campo_nome": "NM_AREA_AVALIACAO",
+    "fonte_glob": "RawData/br-capes-colsucup-prog*.xlsx",
+    "arquivos_lidos": 12,
+    "linhas_validas_lidas": 51901,
+    "total_areas": 50,
+    "conflitos_de_nome_por_codigo": 9
+  },
+  "mapeamento": {
+    "1": "MATEMÁTICA / PROBABILIDADE E ESTATÍSTICA",
+    "2": "CIÊNCIA DA COMPUTAÇÃO",
+    "3": "ASTRONOMIA / FÍSICA",
+    "4": "QUÍMICA",
+    "5": "GEOCIÊNCIAS",
+    "6": "CIÊNCIAS BIOLÓGICAS I",
+    "7": "BIODIVERSIDADE",
+    "8": "CIÊNCIAS BIOLÓGICAS II",
+    "9": "CIÊNCIAS BIOLÓGICAS III",
+    "10": "ENGENHARIAS I",
+    "11": "ARTES",
+    "12": "ENGENHARIAS II",
+    "13": "ENGENHARIAS III",
+    "14": "ENGENHARIAS IV",
+    "15": "MEDICINA I",
+    "16": "MEDICINA II",
+    "17": "MEDICINA III",
+    "18": "ODONTOLOGIA",
+    "19": "FARMÁCIA",
+    "20": "ENFERMAGEM",
+    "21": "EDUCAÇÃO FÍSICA",
+    "22": "SAÚDE COLETIVA",
+    "23": "ZOOTECNIA / RECURSOS PESQUEIROS",
+    "24": "MEDICINA VETERINÁRIA",
+    "25": "CIÊNCIA DE ALIMENTOS",
+    "26": "DIREITO",
+    "27": "ADMINISTRAÇÃO PÚBLICA E DE EMPRESAS, CIÊNCIAS CONTÁBEIS E TURISMO",
+    "28": "ECONOMIA",
+    "29": "ARQUITETURA, URBANISMO E DESIGN",
+    "30": "PLANEJAMENTO URBANO E REGIONAL / DEMOGRAFIA",
+    "31": "COMUNICAÇÃO E INFORMAÇÃO",
+    "32": "SERVIÇO SOCIAL",
+    "33": "FILOSOFIA",
+    "34": "SOCIOLOGIA",
+    "35": "ANTROPOLOGIA / ARQUEOLOGIA",
+    "36": "GEOGRAFIA",
+    "37": "PSICOLOGIA",
+    "38": "EDUCAÇÃO",
+    "39": "CIÊNCIA POLÍTICA E RELAÇÕES INTERNACIONAIS",
+    "40": "HISTÓRIA",
+    "41": "LINGUÍSTICA E LITERATURA",
+    "42": "CIÊNCIAS AGRÁRIAS I",
+    "44": "CIÊNCIAS DA RELIGIÃO E TEOLOGIA",
+    "45": "INTERDISCIPLINAR",
+    "46": "ENSINO",
+    "47": "MATERIAIS",
+    "48": "BIOTECNOLOGIA",
+    "49": "CIÊNCIAS AMBIENTAIS",
+    "50": "NUTRIÇÃO",
+    "51": "CIÊNCIAS E HUMANIDADES PARA A EDUCAÇÃO BÁSICA"
+  },
+  "areas": [
+    {
+      "codigo": "1",
+      "nome": "MATEMÁTICA / PROBABILIDADE E ESTATÍSTICA",
+      "abreviatura": "Mat/PE"
+    },
+    {
+      "codigo": "2",
+      "nome": "CIÊNCIA DA COMPUTAÇÃO",
+      "abreviatura": "CComp"
+    },
+    {
+      "codigo": "3",
+      "nome": "ASTRONOMIA / FÍSICA",
+      "abreviatura": "AstFis"
+    },
+    {
+      "codigo": "4",
+      "nome": "QUÍMICA",
+      "abreviatura": "Quim"
+    },
+    {
+      "codigo": "5",
+      "nome": "GEOCIÊNCIAS",
+      "abreviatura": "Geoc"
+    },
+    {
+      "codigo": "6",
+      "nome": "CIÊNCIAS BIOLÓGICAS I",
+      "abreviatura": "CBioI"
+    },
+    {
+      "codigo": "7",
+      "nome": "BIODIVERSIDADE",
+      "abreviatura": "Biodiv"
+    },
+    {
+      "codigo": "8",
+      "nome": "CIÊNCIAS BIOLÓGICAS II",
+      "abreviatura": "CBioII"
+    },
+    {
+      "codigo": "9",
+      "nome": "CIÊNCIAS BIOLÓGICAS III",
+      "abreviatura": "CBioIII"
+    },
+    {
+      "codigo": "10",
+      "nome": "ENGENHARIAS I",
+      "abreviatura": "EngI"
+    },
+    {
+      "codigo": "11",
+      "nome": "ARTES",
+      "abreviatura": "Artes"
+    },
+    {
+      "codigo": "12",
+      "nome": "ENGENHARIAS II",
+      "abreviatura": "EngII"
+    },
+    {
+      "codigo": "13",
+      "nome": "ENGENHARIAS III",
+      "abreviatura": "EngIII"
+    },
+    {
+      "codigo": "14",
+      "nome": "ENGENHARIAS IV",
+      "abreviatura": "EngIV"
+    },
+    {
+      "codigo": "15",
+      "nome": "MEDICINA I",
+      "abreviatura": "MedI"
+    },
+    {
+      "codigo": "16",
+      "nome": "MEDICINA II",
+      "abreviatura": "MedII"
+    },
+    {
+      "codigo": "17",
+      "nome": "MEDICINA III",
+      "abreviatura": "MedIII"
+    },
+    {
+      "codigo": "18",
+      "nome": "ODONTOLOGIA",
+      "abreviatura": "Odont"
+    },
+    {
+      "codigo": "19",
+      "nome": "FARMÁCIA",
+      "abreviatura": "Farmac"
+    },
+    {
+      "codigo": "20",
+      "nome": "ENFERMAGEM",
+      "abreviatura": "Enferm"
+    },
+    {
+      "codigo": "21",
+      "nome": "EDUCAÇÃO FÍSICA",
+      "abreviatura": "EdFis"
+    },
+    {
+      "codigo": "22",
+      "nome": "SAÚDE COLETIVA",
+      "abreviatura": "SaudCo"
+    },
+    {
+      "codigo": "23",
+      "nome": "ZOOTECNIA / RECURSOS PESQUEIROS",
+      "abreviatura": "Zoo/RQ"
+    },
+    {
+      "codigo": "24",
+      "nome": "MEDICINA VETERINÁRIA",
+      "abreviatura": "MedVet"
+    },
+    {
+      "codigo": "25",
+      "nome": "CIÊNCIA DE ALIMENTOS",
+      "abreviatura": "C.Alim"
+    },
+    {
+      "codigo": "26",
+      "nome": "DIREITO",
+      "abreviatura": "Dir"
+    },
+    {
+      "codigo": "27",
+      "nome": "ADMINISTRAÇÃO PÚBLICA E DE EMPRESAS, CIÊNCIAS CONTÁBEIS E TURISMO",
+      "abreviatura": "AdmPub"
+    },
+    {
+      "codigo": "28",
+      "nome": "ECONOMIA",
+      "abreviatura": "Econo"
+    },
+    {
+      "codigo": "29",
+      "nome": "ARQUITETURA, URBANISMO E DESIGN",
+      "abreviatura": "Arquit"
+    },
+    {
+      "codigo": "30",
+      "nome": "PLANEJAMENTO URBANO E REGIONAL / DEMOGRAFIA",
+      "abreviatura": "PlanUr"
+    },
+    {
+      "codigo": "31",
+      "nome": "COMUNICAÇÃO E INFORMAÇÃO",
+      "abreviatura": "Com/Inf"
+    },
+    {
+      "codigo": "32",
+      "nome": "SERVIÇO SOCIAL",
+      "abreviatura": "SSoc"
+    },
+    {
+      "codigo": "33",
+      "nome": "FILOSOFIA",
+      "abreviatura": "Filos"
+    },
+    {
+      "codigo": "34",
+      "nome": "SOCIOLOGIA",
+      "abreviatura": "Socio"
+    },
+    {
+      "codigo": "35",
+      "nome": "ANTROPOLOGIA / ARQUEOLOGIA",
+      "abreviatura": "Antrop"
+    },
+    {
+      "codigo": "36",
+      "nome": "GEOGRAFIA",
+      "abreviatura": "Geogr"
+    },
+    {
+      "codigo": "37",
+      "nome": "PSICOLOGIA",
+      "abreviatura": "Psic"
+    },
+    {
+      "codigo": "38",
+      "nome": "EDUCAÇÃO",
+      "abreviatura": "Educ"
+    },
+    {
+      "codigo": "39",
+      "nome": "CIÊNCIA POLÍTICA E RELAÇÕES INTERNACIONAIS",
+      "abreviatura": "CiPol/RI"
+    },
+    {
+      "codigo": "40",
+      "nome": "HISTÓRIA",
+      "abreviatura": "Hist"
+    },
+    {
+      "codigo": "41",
+      "nome": "LINGUÍSTICA E LITERATURA",
+      "abreviatura": "LingLit"
+    },
+    {
+      "codigo": "42",
+      "nome": "CIÊNCIAS AGRÁRIAS I",
+      "abreviatura": "CAgrI"
+    },
+    {
+      "codigo": "44",
+      "nome": "CIÊNCIAS DA RELIGIÃO E TEOLOGIA",
+      "abreviatura": "RelTeo"
+    },
+    {
+      "codigo": "45",
+      "nome": "INTERDISCIPLINAR",
+      "abreviatura": "Inter"
+    },
+    {
+      "codigo": "46",
+      "nome": "ENSINO",
+      "abreviatura": "Ensin"
+    },
+    {
+      "codigo": "47",
+      "nome": "MATERIAIS",
+      "abreviatura": "Mater"
+    },
+    {
+      "codigo": "48",
+      "nome": "BIOTECNOLOGIA",
+      "abreviatura": "Biotec"
+    },
+    {
+      "codigo": "49",
+      "nome": "CIÊNCIAS AMBIENTAIS",
+      "abreviatura": "CiAmb"
+    },
+    {
+      "codigo": "50",
+      "nome": "NUTRIÇÃO",
+      "abreviatura": "Nutr"
+    },
+    {
+      "codigo": "51",
+      "nome": "CIÊNCIAS E HUMANIDADES PARA A EDUCAÇÃO BÁSICA",
+      "abreviatura": "CiEdBas"
+    }
+  ],
+  "conflitos": [
+    {
+      "codigo": "2",
+      "nomes_encontrados": [
+        {
+          "nome": "CIÊNCIA DA COMPUTAÇÃO",
+          "ocorrencias": 884
+        },
+        {
+          "nome": "COMPUTAÇÃO",
+          "ocorrencias": 88
+        }
+      ]
+    },
+    {
+      "codigo": "11",
+      "nomes_encontrados": [
+        {
+          "nome": "ARTES",
+          "ocorrencias": 538
+        },
+        {
+          "nome": "ARTES / MÚSICA",
+          "ocorrencias": 202
+        }
+      ]
+    },
+    {
+      "codigo": "21",
+      "nomes_encontrados": [
+        {
+          "nome": "EDUCAÇÃO FÍSICA",
+          "ocorrencias": 746
+        },
+        {
+          "nome": "EDUCAÇÃO FÍSICA, FISIOTERAPIA, FONOAUDIOLOGIA E TERAPIA OCUPACIONAL",
+          "ocorrencias": 83
+        }
+      ]
+    },
+    {
+      "codigo": "27",
+      "nomes_encontrados": [
+        {
+          "nome": "ADMINISTRAÇÃO PÚBLICA E DE EMPRESAS, CIÊNCIAS CONTÁBEIS E TURISMO",
+          "ocorrencias": 2107
+        },
+        {
+          "nome": "ADMINISTRAÇÃO, CIÊNCIAS CONTÁBEIS E TURISMO",
+          "ocorrencias": 36
+        }
+      ]
+    },
+    {
+      "codigo": "29",
+      "nomes_encontrados": [
+        {
+          "nome": "ARQUITETURA, URBANISMO E DESIGN",
+          "ocorrencias": 730
+        },
+        {
+          "nome": "ARQUITETURA E URBANISMO",
+          "ocorrencias": 14
+        }
+      ]
+    },
+    {
+      "codigo": "31",
+      "nomes_encontrados": [
+        {
+          "nome": "COMUNICAÇÃO E INFORMAÇÃO",
+          "ocorrencias": 968
+        },
+        {
+          "nome": "CIÊNCIAS SOCIAIS APLICADAS I",
+          "ocorrencias": 16
+        }
+      ]
+    },
+    {
+      "codigo": "33",
+      "nomes_encontrados": [
+        {
+          "nome": "FILOSOFIA",
+          "ocorrencias": 578
+        },
+        {
+          "nome": "FILOSOFIA / TEOLOGIA:SUBCOMISSÃO FILOSOFIA",
+          "ocorrencias": 11
+        }
+      ]
+    },
+    {
+      "codigo": "41",
+      "nomes_encontrados": [
+        {
+          "nome": "LINGUÍSTICA E LITERATURA",
+          "ocorrencias": 1262
+        },
+        {
+          "nome": "LETRAS / LINGUÍSTICA",
+          "ocorrencias": 580
+        }
+      ]
+    },
+    {
+      "codigo": "44",
+      "nomes_encontrados": [
+        {
+          "nome": "CIÊNCIAS DA RELIGIÃO E TEOLOGIA",
+          "ocorrencias": 168
+        },
+        {
+          "nome": "TEOLOGIA",
+          "ocorrencias": 66
+        },
+        {
+          "nome": "FILOSOFIA/TEOLOGIA:SUBCOMISSÃO TEOLOGIA",
+          "ocorrencias": 14
+        }
+      ]
+    }
+  ]
+}

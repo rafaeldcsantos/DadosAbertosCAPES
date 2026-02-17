@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Relatório Detetive de Transições</title>
+    <link rel="icon" type="image/svg+xml" href="./Images/favicon.svg" />
+    <link rel="stylesheet" href="./CSS/site.css" />
+    <style>
+      .report-controls {
+        display: grid;
+        grid-template-columns:
+          minmax(240px, 2.1fr)
+          minmax(180px, 1.25fr)
+          minmax(74px, 0.5fr)
+          minmax(110px, 0.75fr)
+          minmax(120px, 0.8fr)
+          minmax(230px, 1.9fr);
+        align-items: end;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      .report-controls .control {
+        display: grid;
+        gap: 4px;
+        min-width: 0;
+      }
+
+      .report-controls label {
+        font-size: 0.84rem;
+        font-weight: 700;
+        color: rgba(10, 39, 64, 0.9);
+      }
+
+      .report-controls input,
+      .report-controls select {
+        width: 100%;
+        min-width: 0;
+        border: 1px solid rgba(13, 125, 189, 0.35);
+        background: rgba(255, 255, 255, 0.9);
+        color: var(--ink);
+        border-radius: 8px;
+        padding: 7px 10px;
+        font-size: 0.9rem;
+      }
+
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 8px;
+      }
+
+      .summary-card {
+        border: 1px solid rgba(13, 125, 189, 0.28);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.82);
+        padding: 10px;
+      }
+
+      .summary-card h3 {
+        margin: 0 0 4px;
+        font-size: 0.88rem;
+        line-height: 1.25;
+      }
+
+      .summary-card p {
+        margin: 0;
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #08547f;
+      }
+
+      .meta-line {
+        margin: 0 0 10px;
+        font-size: 0.86rem;
+        color: rgba(10, 39, 64, 0.82);
+      }
+
+      .table-wrap {
+        overflow: auto;
+        border: 1px solid rgba(13, 125, 189, 0.22);
+        border-radius: 10px;
+      }
+
+      .report-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 0;
+        table-layout: fixed;
+        font-size: 0.8rem;
+      }
+
+      .report-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        text-align: left;
+        background: rgba(10, 84, 127, 0.95);
+        color: #fff;
+        padding: 7px 8px;
+      }
+
+      .report-table tbody td {
+        border-bottom: 1px solid rgba(13, 125, 189, 0.16);
+        padding: 6px 7px;
+        vertical-align: top;
+        white-space: normal;
+        word-break: break-word;
+        line-height: 1.3;
+      }
+
+      .report-table th:nth-child(1),
+      .report-table td:nth-child(1) {
+        width: 13.5ch;
+      }
+
+      .report-table th:nth-child(2),
+      .report-table td:nth-child(2) {
+        width: 16%;
+      }
+
+      .report-table th:nth-child(3),
+      .report-table td:nth-child(3) {
+        width: 24%;
+      }
+
+      .report-table th:nth-child(4),
+      .report-table td:nth-child(4) {
+        width: 17%;
+      }
+
+      .report-table th:nth-child(5),
+      .report-table td:nth-child(5) {
+        width: 10%;
+      }
+
+      .report-table th:nth-child(6),
+      .report-table td:nth-child(6) {
+        width: 9%;
+      }
+
+      .report-table th:nth-child(7),
+      .report-table td:nth-child(7) {
+        width: 10%;
+      }
+
+      .report-table tbody tr:hover {
+        background: rgba(13, 125, 189, 0.08);
+      }
+
+      .pager {
+        margin-top: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .pager button {
+        border: 1px solid rgba(13, 125, 189, 0.35);
+        background: rgba(255, 255, 255, 0.92);
+        color: var(--ink);
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 0.86rem;
+        cursor: pointer;
+      }
+
+      .pager button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .error-box-local {
+        margin-top: 10px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(184, 56, 56, 0.35);
+        background: rgba(255, 243, 243, 0.9);
+        color: #7c1d1d;
+        font-size: 0.9rem;
+      }
+
+      @media (max-width: 1380px) {
+        .report-controls {
+          grid-template-columns: repeat(3, minmax(180px, 1fr));
+        }
+
+      }
+
+      @media (max-width: 920px) {
+        .report-controls {
+          grid-template-columns: repeat(2, minmax(160px, 1fr));
+        }
+      }
+
+      @media (max-width: 620px) {
+        .report-controls {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page" id="page">
+      <p class="page-home-link"><a href="./index.html">Página Principal</a></p>
+      <header class="page-header">
+        <h1>Relatório de Transições (2020/2024)</h1>
+        <p>
+          Comparação detalhada por <code>código do programa</code> para identificar
+          continuidade, reclassificações, realocações e entradas/saídas.
+        </p>
+        <div class="disclaimer">
+          Aviso: "ausente em 2024" e "novo em 2024" não implicam automaticamente fechamento/abertura. Pode haver recodificação cadastral.
+        </div>
+      </header>
+
+      <main class="page-content">
+        <section class="chart-section">
+          <h2 class="chart-title">Filtros e Resumo</h2>
+          <div class="chart-wrap">
+            <div class="report-controls">
+              <div class="control control-categoria">
+                <label for="filtro-categoria">Categoria</label>
+                <select id="filtro-categoria"></select>
+              </div>
+              <div class="control control-presenca">
+                <label for="filtro-presenca">Presença</label>
+                <select id="filtro-presenca">
+                  <option value="todas">Todas</option>
+                  <option value="ambos">Presente em 2020 e 2024</option>
+                  <option value="somente_2020">Somente 2020</option>
+                  <option value="somente_2024">Somente 2024</option>
+                </select>
+              </div>
+              <div class="control control-uf">
+                <label for="filtro-uf">UF</label>
+                <select id="filtro-uf">
+                  <option value="todas">Todas</option>
+                </select>
+              </div>
+              <div class="control control-area">
+                <label for="filtro-area">Área</label>
+                <select id="filtro-area">
+                  <option value="todas">Todas</option>
+                </select>
+              </div>
+              <div class="control control-recod">
+                <label for="filtro-recod">Recodificação</label>
+                <select id="filtro-recod">
+                  <option value="todas">Todas</option>
+                  <option value="sim">Sim</option>
+                  <option value="nao">Não</option>
+                </select>
+              </div>
+              <div class="control control-busca">
+                <label for="filtro-busca">Busca (ID, nome, IES)</label>
+                <input id="filtro-busca" type="text" placeholder="Ex.: 330020... ou BIOTECNOLOGIA" />
+              </div>
+            </div>
+
+            <p class="meta-line" id="meta-resumo">Carregando...</p>
+            <div class="summary-grid" id="summary-grid"></div>
+          </div>
+        </section>
+
+        <section class="chart-section">
+          <h2 class="chart-title">Resultado Detalhado</h2>
+          <div class="chart-wrap">
+            <div class="table-wrap">
+              <table class="report-table">
+                <thead>
+                  <tr>
+                    <th>Cód. Programa</th>
+                    <th>Categoria</th>
+                    <th>Nome do Programa</th>
+                    <th>Área 2020 → 2024</th>
+                    <th>UF 2020 → 2024</th>
+                    <th>Situação do Programa 2020 → 2024</th>
+                    <th>Recodificação</th>
+                  </tr>
+                </thead>
+                <tbody id="tabela-corpo"></tbody>
+              </table>
+            </div>
+
+            <div class="pager">
+              <button id="pagina-anterior">Página anterior</button>
+              <span id="pagina-info">Página 1</span>
+              <button id="pagina-proxima">Próxima página</button>
+              <label for="pagina-tamanho">Linhas por página:</label>
+              <select id="pagina-tamanho">
+                <option value="25">25</option>
+                <option value="50" selected>50</option>
+                <option value="100">100</option>
+                <option value="200">200</option>
+              </select>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+    <footer class="site-footnote">
+      <a href="http://linktr.ee/rafaeldcsantos">Rafael Santos</a>
+    </footer>
+
+    <script>
+      (function () {
+        const dataUrl = "./Data/programas-transicoes-2020-2024-detalhado.json";
+
+        const el = {
+          categoria: document.getElementById("filtro-categoria"),
+          presenca: document.getElementById("filtro-presenca"),
+          uf: document.getElementById("filtro-uf"),
+          area: document.getElementById("filtro-area"),
+          recod: document.getElementById("filtro-recod"),
+          busca: document.getElementById("filtro-busca"),
+          metaResumo: document.getElementById("meta-resumo"),
+          summaryGrid: document.getElementById("summary-grid"),
+          tabelaCorpo: document.getElementById("tabela-corpo"),
+          paginaAnterior: document.getElementById("pagina-anterior"),
+          paginaProxima: document.getElementById("pagina-proxima"),
+          paginaInfo: document.getElementById("pagina-info"),
+          paginaTamanho: document.getElementById("pagina-tamanho"),
+        };
+
+        const categoryLabels = {};
+        const categoryLabelOverrides = {
+          identica: "Continuidade estável",
+          reclassificada_area: "Reclassificação de área",
+          realocada_uf: "Realocação de UF",
+          reclassificada_area_e_uf: "Reclassificação de área e UF",
+          ausente_em_2024: "Ausente em 2024",
+          novo_em_2024: "Novo em 2024",
+        };
+        const categoryOrder = [];
+        let allRows = [];
+        let filteredRows = [];
+        let page = 1;
+        let pageSize = Number(el.paginaTamanho.value) || 50;
+
+        function normalizeText(value) {
+          return String(value || "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toUpperCase()
+            .replace(/[^A-Z0-9 ]+/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+        }
+
+        function toList(value) {
+          if (Array.isArray(value)) {
+            return value;
+          }
+          if (value === null || value === undefined || value === "") {
+            return [];
+          }
+          return [value];
+        }
+
+        function toCodeList(areaInfo) {
+          if (!areaInfo) {
+            return [];
+          }
+          return toList(areaInfo.codigo).map((v) => String(v));
+        }
+
+        function toDisplay(value) {
+          if (Array.isArray(value)) {
+            return value.join(" | ");
+          }
+          if (value === null || value === undefined || value === "") {
+            return "-";
+          }
+          return String(value);
+        }
+
+        function statusDisplay(statusDesc, statusCode) {
+          const desc = toDisplay(statusDesc);
+          const code = toDisplay(statusCode);
+          if (desc !== "-" && code !== "-") {
+            return `${desc} (${code})`;
+          }
+          if (desc !== "-") {
+            return desc;
+          }
+          return code;
+        }
+
+        function areaToText(areaInfo) {
+          if (!areaInfo) {
+            return "-";
+          }
+          const code = toDisplay(areaInfo.codigo);
+          const abbr = toDisplay(areaInfo.abreviatura);
+          const name = toDisplay(areaInfo.nome);
+
+          if (abbr !== "-" && abbr !== "null") {
+            return `${code} (${abbr})`;
+          }
+          if (name !== "-" && name !== "null") {
+            return `${code} (${name})`;
+          }
+          return code;
+        }
+
+        function buildCategoryOptions(meta) {
+          const options = [
+            '<option value="todas">Todas</option>',
+            '<option value="mudancas">Mudanças (sem continuidade estável)</option>',
+          ];
+          const defs = (meta && meta.definicoes_categoria) || {};
+          categoryOrder.length = 0;
+          Object.keys(defs).forEach((key) => {
+            const rawLabel = defs[key].rotulo || key;
+            const label = categoryLabelOverrides[key] || rawLabel;
+            categoryLabels[key] = label;
+            categoryOrder.push(key);
+            options.push(`<option value="${key}">${label}</option>`);
+          });
+          el.categoria.innerHTML = options.join("");
+        }
+
+        function buildUfOptions(rows) {
+          const set = new Set();
+          rows.forEach((row) => {
+            toList(row.comparacao && row.comparacao.uf_2020).forEach((v) => set.add(String(v)));
+            toList(row.comparacao && row.comparacao.uf_2024).forEach((v) => set.add(String(v)));
+          });
+          const options = ['<option value="todas">Todas</option>'];
+          [...set]
+            .filter(Boolean)
+            .sort()
+            .forEach((uf) => options.push(`<option value="${uf}">${uf}</option>`));
+          el.uf.innerHTML = options.join("");
+        }
+
+        function buildAreaOptions(rows) {
+          const set = new Set();
+          const abbrByCode = new Map();
+
+          function registerArea(areaInfo) {
+            if (!areaInfo) {
+              return;
+            }
+            const codes = toList(areaInfo.codigo).map((v) => String(v));
+            const abbrs = toList(areaInfo.abreviatura).map((v) =>
+              v === null || v === undefined ? "" : String(v).trim()
+            );
+
+            codes.forEach((code, idx) => {
+              if (!code || code === "null") {
+                return;
+              }
+              const abbr = abbrs[idx] || (abbrs.length === 1 ? abbrs[0] : "");
+              if (!abbrByCode.has(code) || (!abbrByCode.get(code) && abbr)) {
+                abbrByCode.set(code, abbr);
+              }
+              set.add(code);
+            });
+          }
+
+          rows.forEach((row) => {
+            registerArea(row.comparacao && row.comparacao.area_2020);
+            registerArea(row.comparacao && row.comparacao.area_2024);
+          });
+          const options = ['<option value="todas">Todas</option>'];
+          [...set]
+            .filter(Boolean)
+            .sort((a, b) => {
+              const na = Number(a);
+              const nb = Number(b);
+              if (Number.isFinite(na) && Number.isFinite(nb)) {
+                return na - nb;
+              }
+              return String(a).localeCompare(String(b), "pt-BR");
+            })
+            .forEach((area) => {
+              const abbr = abbrByCode.get(area);
+              const label = abbr ? `${area} (${abbr})` : area;
+              options.push(`<option value="${area}">${label}</option>`);
+            });
+          el.area.innerHTML = options.join("");
+        }
+
+        function matchesPresence(row, presence) {
+          if (presence === "todas") {
+            return true;
+          }
+          if (presence === "ambos") {
+            return row.presente_2020 && row.presente_2024;
+          }
+          if (presence === "somente_2020") {
+            return row.presente_2020 && !row.presente_2024;
+          }
+          if (presence === "somente_2024") {
+            return !row.presente_2020 && row.presente_2024;
+          }
+          return true;
+        }
+
+        function applyFilters() {
+          const categoria = el.categoria.value;
+          const presenca = el.presenca.value;
+          const uf = el.uf.value;
+          const area = el.area.value;
+          const recod = el.recod.value;
+          const busca = normalizeText(el.busca.value);
+
+          filteredRows = allRows.filter((row) => {
+            if (categoria === "mudancas") {
+              if (row.categoria === "identica") {
+                return false;
+              }
+            } else if (categoria !== "todas" && row.categoria !== categoria) {
+              return false;
+            }
+            if (!matchesPresence(row, presenca)) {
+              return false;
+            }
+
+            if (uf !== "todas") {
+              const ufVals = new Set([
+                ...toList(row.comparacao && row.comparacao.uf_2020).map(String),
+                ...toList(row.comparacao && row.comparacao.uf_2024).map(String),
+              ]);
+              if (!ufVals.has(uf)) {
+                return false;
+              }
+            }
+
+            if (area !== "todas") {
+              const areaVals = new Set([
+                ...toCodeList(row.comparacao && row.comparacao.area_2020),
+                ...toCodeList(row.comparacao && row.comparacao.area_2024),
+              ]);
+              if (!areaVals.has(area)) {
+                return false;
+              }
+            }
+
+            if (recod === "sim" && !row.possivel_recodificacao) {
+              return false;
+            }
+            if (recod === "nao" && row.possivel_recodificacao) {
+              return false;
+            }
+
+            if (busca) {
+              const text = normalizeText(
+                [
+                  row.cd_programa_ies,
+                  row.dados_2020 && row.dados_2020.NM_PROGRAMA_IES,
+                  row.dados_2024 && row.dados_2024.NM_PROGRAMA_IES,
+                  row.dados_2020 && row.dados_2020.SG_ENTIDADE_ENSINO,
+                  row.dados_2024 && row.dados_2024.SG_ENTIDADE_ENSINO,
+                ]
+                  .filter(Boolean)
+                  .join(" ")
+              );
+              if (!text.includes(busca)) {
+                return false;
+              }
+            }
+
+            return true;
+          });
+
+          page = 1;
+          renderSummary();
+          renderTable();
+        }
+
+        function renderSummary() {
+          const total = filteredRows.length;
+          const categoryCounts = {};
+          filteredRows.forEach((row) => {
+            categoryCounts[row.categoria] = (categoryCounts[row.categoria] || 0) + 1;
+          });
+
+          const cards = [];
+          const categories = categoryOrder.length ? categoryOrder : Object.keys(categoryLabels);
+          categories.forEach((cat) => {
+              const count = categoryCounts[cat] || 0;
+              cards.push(
+                `<article class="summary-card">
+                  <h3>${categoryLabels[cat] || cat}</h3>
+                  <p>${count.toLocaleString("pt-BR")}</p>
+                </article>`
+              );
+            });
+          el.summaryGrid.innerHTML = cards.join("");
+          el.metaResumo.textContent = `Registros filtrados: ${total.toLocaleString("pt-BR")} de ${allRows.length.toLocaleString("pt-BR")}.`;
+        }
+
+        function renderTable() {
+          const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
+          if (page > totalPages) {
+            page = totalPages;
+          }
+          const start = (page - 1) * pageSize;
+          const end = start + pageSize;
+          const rows = filteredRows.slice(start, end);
+
+          const html = rows
+            .map((row) => {
+              const cmp = row.comparacao || {};
+              const nome =
+                (row.dados_2024 && row.dados_2024.NM_PROGRAMA_IES) ||
+                (row.dados_2020 && row.dados_2020.NM_PROGRAMA_IES) ||
+                "-";
+              const areaText =
+                cmp.mudou_area === false
+                  ? ""
+                  : `${areaToText(cmp.area_2020)} → ${areaToText(cmp.area_2024)}`;
+              const ufText =
+                cmp.mudou_uf === false
+                  ? ""
+                  : `${toDisplay(cmp.uf_2020)} → ${toDisplay(cmp.uf_2024)}`;
+              const sitText =
+                cmp.mudou_situacao === false
+                  ? ""
+                  : `${statusDisplay(cmp.sit_descricao_2020, cmp.sit_2020)} → ${statusDisplay(cmp.sit_descricao_2024, cmp.sit_2024)}`;
+              const recod = row.possivel_recodificacao
+                ? `Sim (${row.candidatos_recodificacao.length})`
+                : "Não";
+
+              return `<tr>
+                <td>${row.cd_programa_ies}</td>
+                <td>${categoryLabels[row.categoria] || row.categoria_rotulo || row.categoria}</td>
+                <td>${toDisplay(nome)}</td>
+                <td>${areaText}</td>
+                <td>${ufText}</td>
+                <td>${sitText}</td>
+                <td>${recod}</td>
+              </tr>`;
+            })
+            .join("");
+
+          el.tabelaCorpo.innerHTML = html || "<tr><td colspan='7'>Nenhum registro para os filtros.</td></tr>";
+          el.paginaInfo.textContent = `Página ${page} de ${totalPages}`;
+          el.paginaAnterior.disabled = page <= 1;
+          el.paginaProxima.disabled = page >= totalPages;
+        }
+
+        function wireEvents() {
+          [
+            el.categoria,
+            el.presenca,
+            el.uf,
+            el.area,
+            el.recod,
+            el.busca,
+          ].forEach((node) => node.addEventListener("input", applyFilters));
+
+          el.paginaAnterior.addEventListener("click", () => {
+            if (page > 1) {
+              page -= 1;
+              renderTable();
+            }
+          });
+
+          el.paginaProxima.addEventListener("click", () => {
+            const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
+            if (page < totalPages) {
+              page += 1;
+              renderTable();
+            }
+          });
+
+          el.paginaTamanho.addEventListener("change", () => {
+            pageSize = Number(el.paginaTamanho.value) || 50;
+            page = 1;
+            renderTable();
+          });
+        }
+
+        function showError(message) {
+          const box = document.createElement("div");
+          box.className = "error-box-local";
+          box.textContent = message;
+          const firstSection = document.querySelector(".chart-section .chart-wrap");
+          if (firstSection) {
+            firstSection.appendChild(box);
+          }
+        }
+
+        fetch(dataUrl)
+          .then((resp) => {
+            if (!resp.ok) {
+              throw new Error(`Falha ao carregar ${dataUrl}: HTTP ${resp.status}`);
+            }
+            return resp.json();
+          })
+          .then((payload) => {
+            buildCategoryOptions(payload.metadados || {});
+            allRows = payload.programas || [];
+            buildUfOptions(allRows);
+            buildAreaOptions(allRows);
+            wireEvents();
+            applyFilters();
+          })
+          .catch((err) => {
+            el.metaResumo.textContent = "Erro ao carregar dados.";
+            showError(String(err && err.message ? err.message : err));
+          });
+      })();
+    </script>
+  </body>
+</html>

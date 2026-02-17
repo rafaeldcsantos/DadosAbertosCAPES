@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Variação por Estado</title>
+    <link rel="icon" type="image/svg+xml" href="./Images/favicon.svg" />
+    <link rel="stylesheet" href="./CSS/site.css" />
+  </head>
+  <body>
+    <div class="page" id="page">
+      <p class="page-home-link"><a href="./index.html">Página Principal</a></p>
+      <header class="page-header">
+        <h1>Variação por Estado</h1>
+        <p>Variação no número de programas por estado (agregado de todas as áreas).</p>
+        <div class="disclaimer">
+          Aviso: visualização criada a partir dos <a href="https://dadosabertos.capes.gov.br/">dados abertos da CAPES</a> (bases 2020 e 2024). Os números podem divergir de relatórios oficiais conforme filtros e critérios de consolidação.
+        </div>
+      </header>
+
+      <main class="page-content">
+        <section class="chart-section">
+          <h2 class="chart-title" id="chart-title-uf">Variação por Estado (Brasil)</h2>
+          <div class="chart-wrap">
+            <div class="chart-controls">
+              <label for="metric-select-uf">Métrica:</label>
+              <select id="metric-select-uf">
+                <option value="variacao_absoluta">Variação absoluta (2024 - 2020)</option>
+                <option value="variacao_percentual">Variação percentual (2024 - 2020)</option>
+              </select>
+            </div>
+            <div id="chart-uf-variacao" class="plotly-chart"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+    <footer class="site-footnote">
+      <a href="http://linktr.ee/rafaeldcsantos">Rafael Santos</a>
+    </footer>
+    <script src="./JS/plotly.min.js"></script>
+    <script>
+      (function () {
+        const ufDiv = document.getElementById("chart-uf-variacao");
+        const metricSelect = document.getElementById("metric-select-uf");
+        const ufTitle = document.getElementById("chart-title-uf");
+
+        const metricConfig = {
+          variacao_absoluta: {
+            label: "Variação absoluta (2024 - 2020)",
+            isPercent: false,
+          },
+          variacao_percentual: {
+            label: "Variação percentual (2024 - 2020)",
+            isPercent: true,
+          },
+        };
+
+        const formatInt = new Intl.NumberFormat("pt-BR");
+        const formatPct = new Intl.NumberFormat("pt-BR", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+
+        function formatMetric(value, isPercent) {
+          if (!Number.isFinite(value)) {
+            return "N/A";
+          }
+          if (isPercent) {
+            return `${formatPct.format(value)}%`;
+          }
+          return formatInt.format(value);
+        }
+
+        function showError(message) {
+          const box = document.createElement("div");
+          box.className = "error-box";
+          box.textContent = message;
+          ufDiv.parentElement.appendChild(box);
+        }
+
+        if (typeof Plotly === "undefined") {
+          showError("Plotly não foi carregado. Coloque o arquivo em ./JS/plotly.min.js.");
+          return;
+        }
+
+        fetch("./Data/plot-growth-uf-area-2020-2024.json")
+          .then((r) => r.json())
+          .then((data) => {
+            const ufArea = data.uf_area || [];
+            const ufs = (data.metadados && data.metadados.ufs) || [];
+
+            const ufSummary = {};
+            ufs.forEach((uf) => {
+              ufSummary[uf] = { quantidade_2020: 0, quantidade_2024: 0 };
+            });
+
+            ufArea.forEach((row) => {
+              const uf = String(row.sg_uf_programa);
+              const c2020 = Number(row.quantidade_2020);
+              const c2024 = Number(row.quantidade_2024);
+              if (!ufSummary[uf]) {
+                ufSummary[uf] = { quantidade_2020: 0, quantidade_2024: 0 };
+              }
+              ufSummary[uf].quantidade_2020 += Number.isFinite(c2020) ? c2020 : 0;
+              ufSummary[uf].quantidade_2024 += Number.isFinite(c2024) ? c2024 : 0;
+            });
+
+            const ufRows = Object.keys(ufSummary)
+              .sort()
+              .map((uf) => {
+                const count2020 = ufSummary[uf].quantidade_2020;
+                const count2024 = ufSummary[uf].quantidade_2024;
+                const deltaAbs = count2024 - count2020;
+                const deltaPct = count2020 === 0 ? null : (deltaAbs / count2020) * 100;
+                return {
+                  sg_uf_programa: uf,
+                  quantidade_2020: count2020,
+                  quantidade_2024: count2024,
+                  variacao_absoluta: deltaAbs,
+                  variacao_percentual: deltaPct,
+                };
+              });
+
+            function render(metricKey) {
+              const config = metricConfig[metricKey];
+              if (!config) {
+                return;
+              }
+
+              if (ufTitle) {
+                ufTitle.textContent = `Variação por Estado (Brasil) - ${config.label}`;
+              }
+
+              const sortedUfs = [...ufRows]
+                .filter((row) => Number.isFinite(Number(row[metricKey])))
+                .map((row) => ({ ...row, metricValue: Number(row[metricKey]) }))
+                .sort((a, b) => b.metricValue - a.metricValue);
+
+              const yUf = sortedUfs.map((row) => row.sg_uf_programa);
+              const xUf = sortedUfs.map((row) => row.metricValue);
+              const customUf = sortedUfs.map((row) => [
+                String(row.sg_uf_programa),
+                Number(row.quantidade_2020),
+                Number(row.quantidade_2024),
+                formatMetric(row.metricValue, config.isPercent),
+              ]);
+
+              const ufLollipopX = [];
+              const ufLollipopY = [];
+              yUf.forEach((uf, i) => {
+                ufLollipopX.push(0, xUf[i], null);
+                ufLollipopY.push(uf, uf, null);
+              });
+
+              const ufLineTrace = {
+                type: "scatter",
+                mode: "lines",
+                x: ufLollipopX,
+                y: ufLollipopY,
+                line: { color: "rgba(10, 39, 64, 0.35)", width: 1.4 },
+                hoverinfo: "skip",
+                showlegend: false,
+              };
+
+              const ufPointTrace = {
+                type: "scatter",
+                mode: "markers",
+                x: xUf,
+                y: yUf,
+                customdata: customUf,
+                marker: {
+                  size: 10,
+                  color: xUf.map((v) => (v >= 0 ? "#0a6294" : "#b2182b")),
+                  line: { color: "rgba(10,39,64,0.2)", width: 1 },
+                },
+                hovertemplate:
+                  "<b>UF %{customdata[0]}</b><br>" +
+                  "2020: %{customdata[1]}<br>" +
+                  "2024: %{customdata[2]}<br>" +
+                  `${config.label}: %{customdata[3]}<extra></extra>`,
+                showlegend: false,
+              };
+
+              const ufLayout = {
+                margin: { t: 16, r: 16, b: 36, l: 64 },
+                paper_bgcolor: "rgba(0,0,0,0)",
+                plot_bgcolor: "rgba(0,0,0,0)",
+                xaxis: { title: config.label, zeroline: true, zerolinewidth: 1.2 },
+                yaxis: {
+                  title: "UF",
+                  type: "category",
+                  categoryorder: "array",
+                  categoryarray: yUf,
+                  autorange: "reversed",
+                  automargin: true,
+                  tickfont: { size: 10 },
+                },
+              };
+
+              Plotly.react(ufDiv, [ufLineTrace, ufPointTrace], ufLayout, {
+                responsive: true,
+                displaylogo: false,
+              });
+            }
+
+            render(metricSelect.value);
+            metricSelect.addEventListener("change", (event) => {
+              render(event.target.value);
+            });
+          })
+          .catch((error) => {
+            showError(`Falha ao carregar os arquivos locais: ${error.message}`);
+          });
+      })();
+    </script>
+  </body>
+</html>

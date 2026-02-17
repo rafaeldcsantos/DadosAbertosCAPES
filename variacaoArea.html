@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Variação por Área CAPES</title>
+    <link rel="icon" type="image/svg+xml" href="./Images/favicon.svg" />
+    <link rel="stylesheet" href="./CSS/site.css" />
+  </head>
+  <body>
+    <div class="page" id="page">
+      <p class="page-home-link"><a href="./index.html">Página Principal</a></p>
+      <header class="page-header">
+        <h1>Variação por Área</h1>
+        <p>Variação no número de programas por área da CAPES (agregado Brasil).</p>
+        <div class="disclaimer">
+          Aviso: visualização criada a partir dos <a href="https://dadosabertos.capes.gov.br/">dados abertos da CAPES</a> (bases 2020 e 2024). Os números podem divergir de relatórios oficiais conforme filtros e critérios de consolidação.
+        </div>
+      </header>
+
+      <main class="page-content">
+        <section class="chart-section">
+          <h2 class="chart-title" id="chart-title-area">Variação por Área (Brasil)</h2>
+          <div class="chart-wrap">
+            <div class="chart-controls">
+              <label for="metric-select-area">Métrica:</label>
+              <select id="metric-select-area">
+                <option value="variacao_absoluta">Variação absoluta (2024 - 2020)</option>
+                <option value="variacao_percentual">Variação percentual (2024 - 2020)</option>
+              </select>
+            </div>
+            <div id="chart-area-variacao" class="plotly-chart"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+    <footer class="site-footnote">
+      <a href="http://linktr.ee/rafaeldcsantos">Rafael Santos</a>
+    </footer>
+    <script src="./JS/plotly.min.js"></script>
+    <script>
+      (function () {
+        const areaDiv = document.getElementById("chart-area-variacao");
+        const metricSelect = document.getElementById("metric-select-area");
+        const areaTitle = document.getElementById("chart-title-area");
+
+        const metricConfig = {
+          variacao_absoluta: {
+            label: "Variação absoluta (2024 - 2020)",
+            isPercent: false,
+          },
+          variacao_percentual: {
+            label: "Variação percentual (2024 - 2020)",
+            isPercent: true,
+          },
+        };
+
+        const formatInt = new Intl.NumberFormat("pt-BR");
+        const formatPct = new Intl.NumberFormat("pt-BR", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+
+        function formatMetric(value, isPercent) {
+          if (!Number.isFinite(value)) {
+            return "N/A";
+          }
+          if (isPercent) {
+            return `${formatPct.format(value)}%`;
+          }
+          return formatInt.format(value);
+        }
+
+        function showError(message) {
+          const box = document.createElement("div");
+          box.className = "error-box";
+          box.textContent = message;
+          areaDiv.parentElement.appendChild(box);
+        }
+
+        if (typeof Plotly === "undefined") {
+          showError("Plotly não foi carregado. Coloque o arquivo em ./JS/plotly.min.js.");
+          return;
+        }
+
+        Promise.all([
+          fetch("./Data/plot-growth-uf-area-2020-2024.json").then((r) => r.json()),
+          fetch("./Data/capes-area-avaliacao-map.json").then((r) => r.json()),
+        ])
+          .then(([data, areaMapData]) => {
+            const areasBrasil = data.areas_brasil || [];
+            const areasMeta = (data.metadados && data.metadados.areas) || [];
+
+            const areaCodeToName = {};
+            const areaCodeToAbbr = {};
+
+            ((areaMapData && areaMapData.areas) || []).forEach((area) => {
+              const code = String(area.codigo);
+              const name = area.nome != null ? String(area.nome) : "";
+              const abbr = area.abreviatura != null ? String(area.abreviatura).trim() : "";
+              if (name) {
+                areaCodeToName[code] = name;
+              }
+              if (abbr) {
+                areaCodeToAbbr[code] = abbr;
+              }
+            });
+
+            areasMeta.forEach((area) => {
+              const code = String(area.codigo);
+              if (!areaCodeToName[code]) {
+                areaCodeToName[code] = String(area.nome);
+              }
+            });
+
+            function render(metricKey) {
+              const config = metricConfig[metricKey];
+              if (!config) {
+                return;
+              }
+
+              if (areaTitle) {
+                areaTitle.textContent = `Variação por Área (Brasil) - ${config.label}`;
+              }
+
+              const sortedAreas = [...areasBrasil]
+                .filter((row) => Number.isFinite(Number(row[metricKey])))
+                .map((row) => ({ ...row, metricValue: Number(row[metricKey]) }))
+                .sort((a, b) => b.metricValue - a.metricValue);
+
+              const yAreaCodes = sortedAreas.map((row) => String(row.cd_area_avaliacao));
+              const yAreaLabels = yAreaCodes.map((code) => areaCodeToAbbr[code] || code);
+              const xArea = sortedAreas.map((row) => row.metricValue);
+              const customArea = sortedAreas.map((row) => [
+                areaCodeToAbbr[String(row.cd_area_avaliacao)] || String(row.cd_area_avaliacao),
+                areaCodeToName[String(row.cd_area_avaliacao)] || String(row.nm_area_avaliacao),
+                Number(row.quantidade_2020),
+                Number(row.quantidade_2024),
+                formatMetric(row.metricValue, config.isPercent),
+              ]);
+
+              const lollipopX = [];
+              const lollipopY = [];
+              yAreaLabels.forEach((label, i) => {
+                lollipopX.push(0, xArea[i], null);
+                lollipopY.push(label, label, null);
+              });
+
+              const lineTrace = {
+                type: "scatter",
+                mode: "lines",
+                x: lollipopX,
+                y: lollipopY,
+                line: { color: "rgba(10, 39, 64, 0.35)", width: 1.4 },
+                hoverinfo: "skip",
+                showlegend: false,
+              };
+
+              const pointTrace = {
+                type: "scatter",
+                mode: "markers",
+                x: xArea,
+                y: yAreaLabels,
+                customdata: customArea,
+                marker: {
+                  size: 10,
+                  color: xArea.map((v) => (v >= 0 ? "#0a6294" : "#b2182b")),
+                  line: { color: "rgba(10,39,64,0.2)", width: 1 },
+                },
+                hovertemplate:
+                  "<b>Área %{customdata[0]} - %{customdata[1]}</b><br>" +
+                  "2020: %{customdata[2]}<br>" +
+                  "2024: %{customdata[3]}<br>" +
+                  `${config.label}: %{customdata[4]}<extra></extra>`,
+                showlegend: false,
+              };
+
+              const areaLayout = {
+                margin: { t: 16, r: 16, b: 36, l: 90 },
+                paper_bgcolor: "rgba(0,0,0,0)",
+                plot_bgcolor: "rgba(0,0,0,0)",
+                xaxis: { title: config.label, zeroline: true, zerolinewidth: 1.2 },
+                yaxis: {
+                  title: "Área CAPES (abreviatura)",
+                  type: "category",
+                  categoryorder: "array",
+                  categoryarray: yAreaLabels,
+                  autorange: "reversed",
+                  automargin: true,
+                  tickfont: { size: 10 },
+                },
+              };
+
+              Plotly.react(areaDiv, [lineTrace, pointTrace], areaLayout, {
+                responsive: true,
+                displaylogo: false,
+              });
+            }
+
+            render(metricSelect.value);
+            metricSelect.addEventListener("change", (event) => {
+              render(event.target.value);
+            });
+          })
+          .catch((error) => {
+            showError(`Falha ao carregar os arquivos locais: ${error.message}`);
+          });
+      })();
+    </script>
+  </body>
+</html>

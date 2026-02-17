@@ -1,80 +1,70 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DadosAbertosCAPES - GitHub Pages Demo</title>
-    <style>
-      :root {
-        --bg: #f5f7fb;
-        --text: #1f2937;
-        --card: #ffffff;
-        --line: #dbe2ea;
-        --accent: #0f766e;
-      }
-
-      * {
-        box-sizing: border-box;
-      }
-
-      body {
-        margin: 0;
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        background: var(--bg);
-        color: var(--text);
-      }
-
-      main {
-        max-width: 900px;
-        margin: 48px auto;
-        padding: 0 20px;
-      }
-
-      h1 {
-        margin: 0 0 12px;
-      }
-
-      p {
-        margin: 0 0 20px;
-      }
-
-      .apps {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-      }
-
-      .apps li {
-        background: var(--card);
-        border: 1px solid var(--line);
-        border-radius: 10px;
-        margin-bottom: 12px;
-        padding: 14px 16px;
-      }
-
-      a {
-        color: var(--accent);
-        text-decoration: none;
-        font-weight: 600;
-      }
-
-      a:hover {
-        text-decoration: underline;
-      }
-    </style>
+    <title>Análise de Dados Abertos da CAPES</title>
+    <link rel="icon" type="image/svg+xml" href="./Images/favicon.svg" />
+    <link rel="stylesheet" href="./CSS/site.css" />
   </head>
-  <body>
-    <main>
-      <h1>DadosAbertosCAPES</h1>
-      <p>Static project structure ready for GitHub Pages.</p>
+  <body class="home-page">
+    <div class="page" id="page">
+      <header class="page-header">
+        <h1>Análise de Dados Abertos da CAPES</h1>
+        <p>Página inicial com acesso aos painéis e aplicações deste projeto.</p>
+      </header>
 
-      <h2>Apps</h2>
-      <ul class="apps">
-        <li>
-          <a href="./Demo/">Demo App</a>
-          <div>Simple HTML + CSS + JS + JSON example.</div>
-        </li>
-      </ul>
-    </main>
+      <main class="page-content">
+        <section class="tiles-panel">
+          <h2 class="panel-title">Comparativos 2020-2024</h2>
+          <div class="tiles-grid">
+            <a class="tile" href="./programasNoBrasil.html">
+              <span class="tile-icon" aria-hidden="true">
+                <img src="./Images/Icons/BrazilMap.svg" alt="" />
+              </span>
+              <h3 class="tile-title">Número de Programas de Pós-Graduação no Brasil</h3>
+            </a>
+
+            <a class="tile" href="./programasNoBrasil-45.html">
+              <span class="tile-icon" aria-hidden="true">
+                <img src="./Images/Icons/BrazilMap.svg" alt="" />
+              </span>
+              <h3 class="tile-title">Número de Programas de Pós-Graduação no Brasil - Interdisciplinar</h3>
+            </a>
+
+            <a class="tile" href="./variacaoAreaUF.html">
+              <span class="tile-icon" aria-hidden="true">
+                <img src="./Images/Icons/Heatmap.svg" alt="" />
+              </span>
+              <h3 class="tile-title">Variação por Área e Estado</h3>
+            </a>
+
+            <a class="tile" href="./variacaoArea.html">
+              <span class="tile-icon" aria-hidden="true">
+                <img src="./Images/Icons/Lollipop.svg" alt="" />
+              </span>
+              <h3 class="tile-title">Variação por Área</h3>
+            </a>
+
+            <a class="tile" href="./variacaoUF.html">
+              <span class="tile-icon" aria-hidden="true">
+                <img src="./Images/Icons/Lollipop.svg" alt="" />
+              </span>
+              <h3 class="tile-title">Variação por Estado</h3>
+            </a>
+
+            <a class="tile" href="./transicoesArea.html">
+              <span class="tile-icon" aria-hidden="true">
+                <img src="./Images/Icons/Sankey.svg" alt="" />
+              </span>
+              <h3 class="tile-title">Transições por Área (2020/2024)</h3>
+            </a>
+          </div>
+        </section>
+      </main>
+    </div>
+    <footer class="site-footnote">
+      <a href="http://linktr.ee/rafaeldcsantos">Rafael Santos</a>
+    </footer>
   </body>
 </html>
