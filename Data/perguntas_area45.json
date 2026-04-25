@@ -1,0 +1,79 @@
+{
+  "items": [
+    {
+      "id": "proporcao_ppgs_area45",
+      "pergunta": "Qual a proporção de PPGs da Área 45 em relação a todas as outras áreas?",
+      "resposta_textual": [
+        "A resposta deve ser apresentada a partir da fotografia de 2024, comparando o total de programas ativos da Área 45 com o total de programas ativos de todas as áreas no mesmo ano-base.",
+        "Depois do valor global da proporção, a página pode aprofundar a leitura com visualizações complementares (distribuição territorial e distribuição por notas)."
+      ],
+      "preparacao_dados": [
+        "Abrir a planilha <tt>br-capes-colsucup-prog-2024-2025-12-01.xlsx</tt>.",
+        "Filtrar apenas programas com <tt>DS_SITUACAO_PROGRAMA</tt> = <tt>EM FUNCIONAMENTO</tt>.",
+        "Preservar os campos (na ordem do Excel): <tt>NM_SUBAREA_CONHECIMENTO</tt>, <tt>CD_AREA_AVALIACAO</tt>, <tt>CS_STATUS_JURIDICO</tt>, <tt>DS_DEPENDENCIA_ADMINISTRATIVA</tt>, <tt>NM_REGIAO</tt>, <tt>SG_UF_PROGRAMA</tt>, <tt>NM_MUNICIPIO_PROGRAMA_IES</tt>, <tt>NM_MODALIDADE_PROGRAMA</tt>, <tt>NM_PROGRAMA_IES</tt>, <tt>CD_CONCEITO_PROGRAMA</tt>, <tt>AN_INICIO_PROGRAMA</tt>, <tt>DS_SITUACAO_PROGRAMA</tt>.",
+        "Contar o total de programas ativos por <tt>CD_AREA_AVALIACAO</tt>.",
+        "Calcular a proporção: programas_ativos_area_45 / total_programas_ativos."
+      ],
+      "graficos": [
+        {
+          "id": "tabela_proporcao_2024",
+          "titulo": "Tabela de proporção (2024)",
+          "descricao": "Visão geral com contagens absolutas e percentual da Área 45 no conjunto de programas ativos.",
+          "tipo": "embed",
+          "href": "./45_proporcao.html",
+          "altura_px": 560
+        },
+        {
+          "id": "base_csv_programas_ativos_2024",
+          "titulo": "Base filtrada usada no cálculo (CSV)",
+          "descricao": "Arquivo com programas ativos de 2024 e campos preservados, usado como base para a proporção da Área 45.",
+          "tipo": "link",
+          "href": "./Data/programas_ativos_2024_campos_analise_area45.csv"
+        },
+        {
+          "id": "mapa_distribuicao_uf",
+          "titulo": "Mapa da Área 45 por UF",
+          "descricao": "Distribuição dos programas ativos da Área 45 por estado.",
+          "tipo": "link",
+          "href": "./45_proporcao.html#mapa-uf"
+        },
+        {
+          "id": "perfil_por_nota",
+          "titulo": "Distribuição por notas",
+          "descricao": "Perfil de programas ativos da Área 45 por CD_CONCEITO_PROGRAMA.",
+          "tipo": "link",
+          "href": "./45_proporcao.html#notas"
+        }
+      ]
+    },
+    {
+      "id": "transicoes_programas_area45",
+      "pergunta": "Quais programas mudaram de área entre 2020 e 2024 na Área 45?",
+      "resposta_textual": [
+        "A resposta deve identificar, por código do programa, quais casos envolvendo a Área 45 permaneceram estáveis, quais mudaram de área e quais exigem checagem de possível recodificação cadastral.",
+        "A leitura final deve separar mudança real de área de simples ajuste de cadastro."
+      ],
+      "preparacao_dados": [
+        "Carregar a base comparativa 2020 x 2024 por <tt>CD_PROGRAMA_IES</tt>.",
+        "Filtrar registros com envolvimento da Área 45 no ano inicial ou final.",
+        "Classificar categorias de transição e destacar possíveis recodificações."
+      ],
+      "graficos": [
+        {
+          "id": "painel_transicoes_area45",
+          "titulo": "Painel de transições da Área 45",
+          "descricao": "Visão geral das categorias de transição no período 2020-2024.",
+          "tipo": "link",
+          "href": "./45index.html"
+        },
+        {
+          "id": "roteiro_investigacao",
+          "titulo": "Roteiro de investigação de recodificação",
+          "descricao": "Passos para auditoria manual de casos ambíguos.",
+          "tipo": "link",
+          "href": "./45_resposta.html?id=transicoes_programas_area45"
+        }
+      ]
+    }
+  ]
+}

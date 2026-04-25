@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Área 45 - Transições 2020-2024</title>
+    <link rel="icon" type="image/svg+xml" href="./Images/favicon.svg" />
+    <link rel="stylesheet" href="./CSS/site.css" />
+    <style>
+      .section-card {
+        border: 1px solid rgba(13, 125, 189, 0.28);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 14px;
+      }
+
+      .section-title {
+        margin: 0 0 8px;
+        color: #08547f;
+        font-size: 1rem;
+      }
+
+      .section-card p,
+      .section-card ul,
+      .section-card ol {
+        margin: 0 0 10px;
+      }
+
+      .section-card ul,
+      .section-card ol {
+        padding-left: 20px;
+      }
+
+      .chart-box {
+        border: 1px dashed rgba(13, 125, 189, 0.4);
+        border-radius: 8px;
+        background: rgba(245, 249, 255, 0.9);
+        min-height: 280px;
+        padding: 10px;
+      }
+
+      .chart-box p {
+        margin: 0;
+        font-size: 0.9rem;
+        color: rgba(10, 39, 64, 0.78);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page" id="page">
+      <p class="page-home-link"><a href="./45index.html">Voltar para Área 45</a></p>
+
+      <header class="page-header">
+        <h1>Quais programas mudaram de área entre 2020 e 2024 na Área 45?</h1>
+      </header>
+
+      <main class="page-content">
+        <section class="tiles-panel">
+          <h2 class="panel-title">Panorama de transições</h2>
+          <div class="section-card">
+            <h3 class="section-title">Como calcular</h3>
+            <p>
+              Esta seção descreve os tipos de transição identificados no período
+              2020-2024 envolvendo a Área 45.
+            </p>
+
+            <h3 class="section-title">Pré-processamento</h3>
+            <ol>
+              <li>Selecionar arquivo <tt>programas-transicoes-2020-2024-detalhado.json</tt>.</li>
+              <li>Filtrar por participação da Área 45 (<tt>area_2020 = 45</tt> ou <tt>area_2024 = 45</tt>).</li>
+              <li>Selecionar campos <tt>CD_PROGRAMA_IES</tt>, <tt>categoria</tt>, <tt>presente_2020</tt>, <tt>presente_2024</tt>, <tt>possivel_recodificacao</tt>, <tt>comparacao</tt>.</li>
+            </ol>
+            <p>
+              Dados Pré-processados:
+              <a href="./Data/programas-transicoes-2020-2024-detalhado.json"><tt>Data/programas-transicoes-2020-2024-detalhado.json</tt></a>
+            </p>
+
+            <h3 class="section-title">Gráfico</h3>
+            <div class="chart-box">
+              <p>Inserir aqui gráfico/tabela de transições.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="tiles-panel">
+          <h2 class="panel-title">Casos para investigação (opcional)</h2>
+          <div class="section-card">
+            <h3 class="section-title">Como calcular</h3>
+            <p>
+              Seção opcional para destacar casos de possível recodificação.
+            </p>
+
+            <h3 class="section-title">Pré-processamento</h3>
+            <ol>
+              <li>Selecionar arquivo <tt>programas-transicoes-2020-2024-detalhado.json</tt>.</li>
+              <li>Filtrar por <tt>categoria</tt> em <tt>ausente_em_2024</tt> ou <tt>novo_em_2024</tt>.</li>
+              <li>Selecionar campos <tt>CD_PROGRAMA_IES</tt>, <tt>categoria</tt>, <tt>possivel_recodificacao</tt>, <tt>candidatos_recodificacao</tt>, <tt>comparacao</tt>.</li>
+            </ol>
+            <p>
+              Dados Pré-processados:
+              <a href="./Data/programas-transicoes-2020-2024-detalhado.json"><tt>Data/programas-transicoes-2020-2024-detalhado.json</tt></a>
+            </p>
+
+            <h3 class="section-title">Gráfico</h3>
+            <div class="chart-box">
+              <p>Inserir aqui gráfico/tabela de casos investigados.</p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <footer class="site-footnote">
+      <a href="http://linktr.ee/rafaeldcsantos">Rafael Santos</a>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Área 45 - Template de Pergunta</title>
+    <link rel="icon" type="image/svg+xml" href="./Images/favicon.svg" />
+    <link rel="stylesheet" href="./CSS/site.css" />
+    <style>
+      .section-card {
+        border: 1px solid rgba(13, 125, 189, 0.28);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 14px;
+      }
+
+      .section-title {
+        margin: 0 0 8px;
+        color: #08547f;
+        font-size: 1rem;
+      }
+
+      .section-card p,
+      .section-card ul,
+      .section-card ol {
+        margin: 0 0 10px;
+      }
+
+      .section-card ul,
+      .section-card ol {
+        padding-left: 20px;
+      }
+
+      .chart-box {
+        border: 1px dashed rgba(13, 125, 189, 0.4);
+        border-radius: 8px;
+        background: rgba(245, 249, 255, 0.9);
+        min-height: 280px;
+        padding: 10px;
+      }
+
+      .chart-box p {
+        margin: 0;
+        font-size: 0.9rem;
+        color: rgba(10, 39, 64, 0.78);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page" id="page">
+      <p class="page-home-link"><a href="./45index.html">Voltar para Área 45</a></p>
+
+      <header class="page-header">
+        <h1>[TEXTO DA PERGUNTA AQUI]</h1>
+      </header>
+
+      <main class="page-content">
+        <section class="tiles-panel">
+          <h2 class="panel-title">[TÍTULO DA SEÇÃO]</h2>
+          <div class="section-card">
+            <h3 class="section-title">Como calcular</h3>
+            <p>
+              Escreva aqui a explicação da resposta para este recorte da análise.
+            </p>
+
+            <h3 class="section-title">Pré-processamento</h3>
+            <ol>
+              <li>Selecionar arquivo <tt>[NOME_DO_ARQUIVO]</tt>.</li>
+              <li>Filtrar por <tt>[CAMPO] = [VALOR]</tt>.</li>
+              <li>Selecionar campos <tt>[CAMPO_1]</tt>, <tt>[CAMPO_2]</tt>, <tt>[CAMPO_3]</tt>.</li>
+            </ol>
+            <p>
+              Dados Pré-processados:
+              <a href="./Data/arquivo_exemplo.csv"><tt>Data/arquivo_exemplo.csv</tt></a>
+            </p>
+
+            <h3 class="section-title">Gráfico</h3>
+            <div class="chart-box">
+              <p>
+                Substitua este bloco por gráfico embutido (Plotly/iframe/imagem), conforme a necessidade.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="tiles-panel">
+          <h2 class="panel-title">[TÍTULO DA SEÇÃO OPCIONAL]</h2>
+          <div class="section-card">
+            <h3 class="section-title">Como calcular</h3>
+            <p>
+              Repita a mesma estrutura para quantas seções forem necessárias.
+            </p>
+
+            <h3 class="section-title">Pré-processamento</h3>
+            <ol>
+              <li>Selecionar arquivo <tt>[NOME_DO_ARQUIVO]</tt>.</li>
+              <li>Filtrar por <tt>[CAMPO] = [VALOR]</tt>.</li>
+              <li>Selecionar campos <tt>[CAMPO_1]</tt>, <tt>[CAMPO_2]</tt>, <tt>[CAMPO_3]</tt>.</li>
+            </ol>
+            <p>
+              Dados Pré-processados:
+              <a href="./Data/arquivo_exemplo_2.csv"><tt>Data/arquivo_exemplo_2.csv</tt></a>
+            </p>
+
+            <h3 class="section-title">Gráfico</h3>
+            <div class="chart-box">
+              <p>Inserir gráfico desta seção.</p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <footer class="site-footnote">
+      <a href="http://linktr.ee/rafaeldcsantos">Rafael Santos</a>
+    </footer>
+  </body>
+</html>
