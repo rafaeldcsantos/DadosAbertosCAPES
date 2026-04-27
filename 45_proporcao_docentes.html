@@ -1,0 +1,1296 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Área 45 - Proporção de Docentes</title>
+  <link rel="icon" type="image/svg+xml" href="./Images/favicon.svg" />
+  <link rel="stylesheet" href="./CSS/site.css" />
+  <style>
+    .section-card {
+      border: 1px solid rgba(13, 125, 189, 0.28);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 14px;
+    }
+
+    .section-title {
+      margin: 0 0 8px;
+      color: #08547f;
+      font-size: 1rem;
+    }
+
+    .section-card p,
+    .section-card ul,
+    .section-card ol {
+      margin: 0 0 10px;
+    }
+
+    .section-card ul,
+    .section-card ol {
+      padding-left: 20px;
+    }
+
+    .chart-box {
+      border: 1px dashed rgba(13, 125, 189, 0.4);
+      border-radius: 8px;
+      background: rgba(245, 249, 255, 0.9);
+      min-height: 280px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+
+    :root {
+      --chart-max-width: 920px;
+      --chart-max-width-large: 1040px;
+    }
+
+    .chart-box [id^="chart-"] {
+      width: min(100%, var(--chart-max-width));
+      aspect-ratio: 4 / 3;
+      height: auto;
+      margin: 0 auto;
+    }
+
+    .chart-box p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: rgba(10, 39, 64, 0.78);
+    }
+
+    #chart-mondrian-colegios {
+      width: min(100%, var(--chart-max-width-large));
+    }
+
+    .chart-note {
+      margin-top: 8px;
+      font-size: 0.84rem;
+      color: rgba(10, 39, 64, 0.78);
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid rgba(13, 125, 189, 0.3);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.92);
+    }
+
+    .programs-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+      font-size: 0.9rem;
+    }
+
+    .programs-table thead th {
+      background: rgba(10, 98, 148, 0.92);
+      color: #fff;
+      text-align: left;
+      padding: 8px 10px;
+      font-weight: 600;
+    }
+
+    .programs-table td {
+      padding: 8px 10px;
+      border-top: 1px solid rgba(13, 125, 189, 0.18);
+      color: rgba(10, 39, 64, 0.92);
+    }
+
+    .programs-table tbody tr:nth-child(even) {
+      background: rgba(245, 249, 255, 0.75);
+    }
+
+    .programs-table td.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page" id="page">
+    <p class="page-home-link"><a href="./45index.html">Voltar para Área 45</a></p>
+
+    <header class="page-header">
+      <h1>Qual a proporção de docentes da Área 45 em relação a todas as outras áreas?</h1>
+    </header>
+
+    <main class="page-content">
+      <section class="tiles-panel">
+        <h2 class="panel-title">Quantidade em 2024</h2>
+        <div class="section-card">
+          <h3 class="section-title">Sobre</h3>
+          <p>Vamos usar a planilha mais recente (<tt>br-capes-colsucup-docente-2024-2025-12-01.xlsx</tt>)
+            do <a href="https://dadosabertos.capes.gov.br/">Portal de Dados Abertos da CAPES</a>,
+          filtrar somente registros com <tt>AN_BASE = 2024</tt> e <tt>CD_PROGRAMA_IES</tt> presente na tabela de filtro
+          <tt>Data/programas_ativos_2024_filtro.csv</tt> (programas com <tt>DS_SITUACAO_PROGRAMA = EM FUNCIONAMENTO</tt>),
+          agregar por <tt>CD_AREA_AVALIACAO</tt> e contar docentes distintos por <tt>ID_PESSOA</tt> para montar o histograma.
+          Também calculamos a razão <tt>docentes/programas</tt> por área, dividindo a contagem de docentes pelo número de programas ativos em cada área.</p>
+          <h3 class="section-title">Número de docentes por área</h3>
+          <div class="chart-box">
+            <div id="chart-area-contagem"></div>
+            <p class="chart-note">
+              Histograma por área (X = nome abreviado da área, Y = contagem de docentes). A barra da
+              Área 45 está destacada em laranja.
+            </p>
+          </div>
+          <h3 class="section-title">Docentes por Programa (razão por área)</h3>
+          <div class="chart-box">
+            <div id="chart-area-docentes-por-programa"></div>
+            <p class="chart-note">
+              Histograma por área (X = nome abreviado da área, Y = <tt>docentes/programas</tt>).
+              Cálculo: docentes distintos da área / programas ativos da área.
+            </p>
+          </div>
+          <h3 class="section-title">Programas da Área 51 e número de docentes</h3>
+          <div class="chart-box">
+            <div id="table-area51-programas"></div>
+            <p class="chart-note">
+              Contagem de docentes distintos por programa da Área 51 (base 2024, somente programas ativos).
+            </p>
+          </div>
+          <h3 class="section-title">Docentes por Programa (escala log)</h3>
+          <div class="chart-box">
+            <div id="chart-area-docentes-por-programa-log"></div>
+            <p class="chart-note">
+              Versão em escala logarítmica (<tt>log10</tt>) do histograma de
+              <tt>docentes/programas</tt>, para facilitar comparação entre áreas.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="tiles-panel">
+        <h2 class="panel-title">Distribuição por UF</h2>
+        <div class="section-card">
+          <h3 class="section-title">Sobre</h3>
+          <p>Com a mesma base da seção anterior (<tt>AN_BASE = 2024</tt> e somente programas ativos via
+            <tt>Data/programas_ativos_2024_filtro.csv</tt>),
+            agregamos por <tt>SG_UF_PROGRAMA</tt> para obter, em cada UF, o total de docentes distintos (<tt>ID_PESSOA</tt>) e
+            quantos são da Área 45 (<tt>CD_AREA_AVALIACAO = 45</tt>).
+            A proporção é <tt>area45_uf / total_uf</tt>.</p>
+          <h3 class="section-title">Proporção da Área 45 por UF (Marimekko)</h3>
+          <div class="chart-box">
+            <div id="chart-uf-proporcao"></div>
+            <p class="chart-note">
+              Marimekko por UF: largura da barra = participação da UF no total de docentes; altura empilhada = 100%
+              (Área 45 vs demais áreas).
+            </p>
+          </div>
+          <p>Podemos ver a proporção também em um mapa cloroplético.</p>
+          <h3 class="section-title">Mapa da Proporção por UF</h3>
+          <div class="chart-box">
+            <div id="chart-uf-choropleth"></div>
+            <p class="chart-note">
+              Mapa cloroplético por UF com a proporção de docentes da Área 45 no total de docentes em cada estado.
+              Escala fixa: <tt>0% = branco</tt>, <tt>10% = azul</tt>, <tt>20% = laranja</tt>, com topo em
+              <tt>30%</tt>.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="tiles-panel">
+        <h2 class="panel-title">Comparação Hierárquica (CAPES)</h2>
+        <div class="section-card">
+          <h3 class="section-title">Sobre</h3>
+          <p>
+            Agora comparamos a Área 45 em uma estrutura hierárquica da CAPES
+            (<tt>Colégio</tt> e <tt>Grande Área</tt>). Usamos a mesma base de
+            docentes de 2024, com classificação do arquivo
+            <tt>Colegios e Grandes Areas.xlsx</tt>.
+          </p>
+          <h3 class="section-title">Comparação na Grande Área Multidisciplinar</h3>
+          <div class="chart-box">
+            <div id="chart-grande-area-45"></div>
+            <p class="chart-note">
+              Docentes da Grande Área Multidisciplinar. A fatia da Área 45 está em laranja.
+            </p>
+          </div>
+          <h3 class="section-title">Comparação no Colégio Ciências Exatas, Tecnológicas e Multidisciplinar</h3>
+          <div class="chart-box">
+            <div id="chart-colegio-45"></div>
+            <p class="chart-note">
+              Docentes do Colégio Ciências Exatas, Tecnológicas e Multidisciplinar. Cores:
+              <tt>laranja = Área 45</tt>, <tt>azul médio = mesma grande área</tt>,
+              <tt>azul claro = outras grandes áreas do colégio</tt>.
+            </p>
+          </div>
+          <p>Podemos também ter uma visão geral da proporção (representada pela área) dos docentes da área
+            Interdisciplinar com todos os outros da CAPES, agrupados por Colégio e Grande Área.
+          </p>
+          <h3 class="section-title">Distribuição Geral por Colégio e Grande Área</h3>
+          <div class="chart-box">
+            <div id="chart-mondrian-colegios"></div>
+            <p class="chart-note">
+              Mondrian (treemap) com todos os docentes em 2024, organizado por
+              <tt>Colégio → Grande Área → Área</tt>.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="./JS/plotly.min.js"></script>
+  <script>
+    (function () {
+      const contagemCsvUrl = "./Data/docentes_2024_contagem_por_area_nome.csv";
+      const contagemProgramasCsvUrl = "./Data/programas_ativos_2024_contagem_por_area_nome.csv";
+      const programasAtivosFiltroCsvUrl = "./Data/programas_ativos_2024_filtro.csv";
+      const abreviacoesCsvUrl = "./Data/areas_avaliacao_abreviacoes.csv";
+      const docentesCsvUrl = "./Data/docentes_2024_campos_analise_area45.csv";
+      const comparativoHierarquiaCsvUrl =
+        "./Data/docentes_2024_comparativo_area45_grande_area_colegio.csv";
+      const brStatesGeoJsonUrl = "./JS/br_states.json";
+      const chartDiv = document.getElementById("chart-area-contagem");
+      const chartDocentesPorProgramaDiv = document.getElementById("chart-area-docentes-por-programa");
+      const tableArea51ProgramasDiv = document.getElementById("table-area51-programas");
+      const chartDocentesPorProgramaLogDiv = document.getElementById("chart-area-docentes-por-programa-log");
+      const chartUfDiv = document.getElementById("chart-uf-proporcao");
+      const chartUfMapDiv = document.getElementById("chart-uf-choropleth");
+      const chartGrandeAreaDiv = document.getElementById("chart-grande-area-45");
+      const chartColegioDiv = document.getElementById("chart-colegio-45");
+      const chartMondrianDiv = document.getElementById("chart-mondrian-colegios");
+
+      function parseCsvLine(line) {
+        const out = [];
+        let current = "";
+        let inQuotes = false;
+
+        for (let i = 0; i < line.length; i += 1) {
+          const ch = line[i];
+          if (ch === '"') {
+            if (inQuotes && line[i + 1] === '"') {
+              current += '"';
+              i += 1;
+            } else {
+              inQuotes = !inQuotes;
+            }
+            continue;
+          }
+          if (ch === "," && !inQuotes) {
+            out.push(current);
+            current = "";
+            continue;
+          }
+          current += ch;
+        }
+        out.push(current);
+        return out;
+      }
+
+      function parseCsv(text) {
+        const lines = String(text || "")
+          .split(/\r?\n/)
+          .filter((line) => line.trim().length > 0);
+        if (lines.length < 2) {
+          return [];
+        }
+
+        const headers = parseCsvLine(lines[0]).map((h) => h.trim());
+        return lines.slice(1).map((line) => {
+          const cols = parseCsvLine(line);
+          const row = {};
+          headers.forEach((header, idx) => {
+            row[header] = (cols[idx] || "").trim();
+          });
+          return row;
+        });
+      }
+
+      function showError(target, message) {
+        if (!target) {
+          return;
+        }
+        target.innerHTML = `<p>${message}</p>`;
+      }
+
+      function escapeHtml(value) {
+        return String(value || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function fetchCsvText(url) {
+        return fetch(url).then((resp) => {
+          if (!resp.ok) {
+            throw new Error(`Falha ao carregar CSV: HTTP ${resp.status} (${url})`);
+          }
+          return resp.text();
+        });
+      }
+
+      function normalizeUf(value) {
+        return String(value || "")
+          .trim()
+          .toUpperCase()
+          .replace(/^BR[-_]?/, "");
+      }
+
+      function getFeatureRawValue(feature, key) {
+        if (key === "id") {
+          return feature.id;
+        }
+        return feature && feature.properties ? feature.properties[key] : undefined;
+      }
+
+      function chooseFeatureKey(geojson, knownUfs) {
+        const features = geojson && Array.isArray(geojson.features) ? geojson.features : [];
+        const keys = ["id", "sigla", "SIGLA", "uf", "UF", "abbr", "abbrev", "codigo_uf", "cd_uf"];
+        let best = { key: "id", matches: 0 };
+
+        keys.forEach((key) => {
+          let matches = 0;
+          features.forEach((feature) => {
+            const uf = normalizeUf(getFeatureRawValue(feature, key));
+            if (knownUfs.has(uf)) {
+              matches += 1;
+            }
+          });
+          if (matches > best.matches) {
+            best = { key, matches };
+          }
+        });
+
+        return best;
+      }
+
+      if (typeof Plotly === "undefined") {
+        showError(chartDiv, "Plotly não foi carregado.");
+        showError(chartDocentesPorProgramaDiv, "Plotly não foi carregado.");
+        showError(tableArea51ProgramasDiv, "Plotly não foi carregado.");
+        showError(chartDocentesPorProgramaLogDiv, "Plotly não foi carregado.");
+        showError(chartUfDiv, "Plotly não foi carregado.");
+        showError(chartUfMapDiv, "Plotly não foi carregado.");
+        showError(chartGrandeAreaDiv, "Plotly não foi carregado.");
+        showError(chartColegioDiv, "Plotly não foi carregado.");
+        showError(chartMondrianDiv, "Plotly não foi carregado.");
+        return;
+      }
+
+      Promise.all([
+        fetchCsvText(contagemCsvUrl),
+        fetchCsvText(contagemProgramasCsvUrl),
+        fetchCsvText(abreviacoesCsvUrl),
+      ])
+        .then(([contagemCsvText, contagemProgramasCsvText, abreviacoesCsvText]) => {
+          const abreviacoesPorCodigo = {};
+          parseCsv(abreviacoesCsvText).forEach((row) => {
+            const codigo = String(row.CD_AREA_AVALIACAO || "").trim();
+            const abreviado = String(row.NM_AREA_AVALIACAO_ABREVIADA || "").trim();
+            const nome = String(row.NM_AREA_AVALIACAO || "").trim();
+            if (codigo) {
+              abreviacoesPorCodigo[codigo] = abreviado || nome;
+            }
+          });
+
+          const rows = parseCsv(contagemCsvText)
+            .map((row) => {
+              const code = String(row.CD_AREA_AVALIACAO || "").trim();
+              const area = String(row.NM_AREA_AVALIACAO || "").trim();
+              const areaAbreviada = abreviacoesPorCodigo[code] || area;
+              return {
+                code,
+                area,
+                areaAbreviada,
+                y: Number(row.CONTAGEM_DOCENTES || 0),
+              };
+            })
+            .filter((row) => row.area && Number.isFinite(row.y) && row.y > 0)
+            .sort((a, b) => b.y - a.y);
+
+          if (!rows.length) {
+            showError(chartDiv, "CSV sem dados para o histograma.");
+            return;
+          }
+
+          const x = rows.map((r) => r.areaAbreviada);
+          const y = rows.map((r) => r.y);
+          const customData = rows.map((r) => [r.code, r.area]);
+          const barColors = rows.map((r) =>
+            r.code === "45" ? "rgba(242, 140, 40, 0.95)" : "rgba(10, 98, 148, 0.82)"
+          );
+          const barLineColors = rows.map((r) =>
+            r.code === "45" ? "rgba(165, 86, 18, 1)" : "rgba(10, 39, 64, 0.55)"
+          );
+
+          const trace = {
+            type: "bar",
+            x: x,
+            y: y,
+            marker: {
+              color: barColors,
+              line: { color: barLineColors, width: 1 },
+            },
+            customdata: customData,
+            hovertemplate:
+              "<b>%{customdata[1]}</b> (Área %{customdata[0]})<br>Rótulo: %{x}<br>Docentes distintos: %{y}<extra></extra>",
+          };
+
+          const layout = {
+            title: {
+              text: "Docentes por área de avaliação (2024)",
+              x: 0.5,
+              xanchor: "center",
+            },
+            margin: { t: 70, r: 12, b: 220, l: 70 },
+            paper_bgcolor: "rgba(0,0,0,0)",
+            plot_bgcolor: "rgba(255,255,255,0.6)",
+            xaxis: {
+              title: "Área (nome abreviado)",
+              tickangle: -45,
+              automargin: true,
+            },
+            yaxis: {
+              title: "Contagem",
+              rangemode: "tozero",
+            },
+            showlegend: false,
+          };
+
+          Plotly.newPlot(chartDiv, [trace], layout, {
+            responsive: true,
+            displayModeBar: true,
+            modeBarButtonsToRemove: ["lasso2d", "select2d"],
+          });
+
+          const programasByCode = {};
+          parseCsv(contagemProgramasCsvText).forEach((row) => {
+            const code = String(row.CD_AREA_AVALIACAO || "").trim();
+            const programas = Number(row.CONTAGEM_PROGRAMAS || 0);
+            if (code && Number.isFinite(programas) && programas > 0) {
+              programasByCode[code] = programas;
+            }
+          });
+
+          const ratioRows = rows
+            .map((row) => {
+              const programas = Number(programasByCode[row.code] || 0);
+              if (!(programas > 0)) {
+                return null;
+              }
+              const ratio = row.y / programas;
+              return {
+                ...row,
+                programas,
+                ratio,
+              };
+            })
+            .filter((row) => row && Number.isFinite(row.ratio))
+            .sort((a, b) => b.ratio - a.ratio || a.area.localeCompare(b.area, "pt-BR"));
+
+          if (!ratioRows.length) {
+            showError(
+              chartDocentesPorProgramaDiv,
+              "Sem dados para o histograma de docentes por programa."
+            );
+            return;
+          }
+
+          const ratioTrace = {
+            type: "bar",
+            x: ratioRows.map((r) => r.areaAbreviada),
+            y: ratioRows.map((r) => r.ratio),
+            marker: {
+              color: ratioRows.map((r) =>
+                r.code === "45" ? "rgba(242, 140, 40, 0.95)" : "rgba(10, 98, 148, 0.82)"
+              ),
+              line: {
+                color: ratioRows.map((r) =>
+                  r.code === "45" ? "rgba(165, 86, 18, 1)" : "rgba(10, 39, 64, 0.55)"
+                ),
+                width: 1,
+              },
+            },
+            customdata: ratioRows.map((r) => [r.code, r.area, r.y, r.programas]),
+            hovertemplate:
+              "<b>%{customdata[1]}</b> (Área %{customdata[0]})<br>" +
+              "Docentes: %{customdata[2]}<br>" +
+              "Programas: %{customdata[3]}<br>" +
+              "Docentes por programa: %{y:.2f}<extra></extra>",
+          };
+
+          const ratioLayout = {
+            title: {
+              text: "Docentes por programa por área de avaliação (2024)",
+              x: 0.5,
+              xanchor: "center",
+            },
+            margin: { t: 70, r: 12, b: 220, l: 70 },
+            paper_bgcolor: "rgba(0,0,0,0)",
+            plot_bgcolor: "rgba(255,255,255,0.6)",
+            xaxis: {
+              title: "Área (nome abreviado)",
+              tickangle: -45,
+              automargin: true,
+            },
+            yaxis: {
+              title: "Docentes / programa",
+              rangemode: "tozero",
+            },
+            showlegend: false,
+          };
+
+          Plotly.newPlot(chartDocentesPorProgramaDiv, [ratioTrace], ratioLayout, {
+            responsive: true,
+            displayModeBar: true,
+            modeBarButtonsToRemove: ["lasso2d", "select2d"],
+          });
+
+          const ratioLogLayout = {
+            title: {
+              text: "Docentes por programa por área de avaliação (2024) - escala log",
+              x: 0.5,
+              xanchor: "center",
+            },
+            margin: { t: 70, r: 12, b: 220, l: 70 },
+            paper_bgcolor: "rgba(0,0,0,0)",
+            plot_bgcolor: "rgba(255,255,255,0.6)",
+            xaxis: {
+              title: "Área (nome abreviado)",
+              tickangle: -45,
+              automargin: true,
+            },
+            yaxis: {
+              title: "Docentes / programa (log10)",
+              type: "log",
+              rangemode: "tozero",
+            },
+            showlegend: false,
+          };
+
+          Plotly.newPlot(chartDocentesPorProgramaLogDiv, [ratioTrace], ratioLogLayout, {
+            responsive: true,
+            displayModeBar: true,
+            modeBarButtonsToRemove: ["lasso2d", "select2d"],
+          });
+        })
+        .catch((err) => {
+          showError(chartDiv, err && err.message ? err.message : "Erro ao gerar histograma.");
+          showError(
+            chartDocentesPorProgramaDiv,
+            err && err.message ? err.message : "Erro ao gerar histograma de docentes por programa."
+          );
+          showError(
+            chartDocentesPorProgramaLogDiv,
+            err && err.message ? err.message : "Erro ao gerar histograma de docentes por programa em escala log."
+          );
+        });
+
+      Promise.all([
+        fetchCsvText(docentesCsvUrl),
+        fetchCsvText(programasAtivosFiltroCsvUrl),
+        fetch(brStatesGeoJsonUrl).then((resp) => {
+          if (!resp.ok) {
+            throw new Error(`Falha ao carregar GeoJSON: HTTP ${resp.status} (${brStatesGeoJsonUrl})`);
+          }
+          return resp.json();
+        }),
+      ])
+        .then(([csvText, programasFiltroCsvText, geojson]) => {
+          const rows = parseCsv(csvText)
+            .map((row) => ({
+              uf: String(row.SG_UF_PROGRAMA || "").trim().toUpperCase(),
+              areaCode: String(row.CD_AREA_AVALIACAO || "").trim(),
+              docenteId: String(row.ID_PESSOA || "").trim(),
+              programaCode: String(row.CD_PROGRAMA_IES || "").trim(),
+              programaNome: String(row.NM_PROGRAMA_IES || "").trim(),
+            }))
+            .filter((row) => row.uf && row.areaCode && row.docenteId);
+
+          if (!rows.length) {
+            showError(chartUfDiv, "CSV sem dados para o marimekko por UF.");
+            showError(tableArea51ProgramasDiv, "CSV sem dados para a tabela da Área 51.");
+            return;
+          }
+
+          const redeByProgramCode = {};
+          parseCsv(programasFiltroCsvText).forEach((row) => {
+            const code = String(row.CD_PROGRAMA_IES || "").trim();
+            const inRede = String(row.IN_REDE || "").trim().toUpperCase();
+            if (code) {
+              redeByProgramCode[code] = inRede || "";
+            }
+          });
+
+          const area51ByProgram = {};
+          rows
+            .filter((row) => row.areaCode === "51")
+            .forEach((row) => {
+              const key = row.programaCode || `${row.programaNome}::${row.uf}`;
+              if (!area51ByProgram[key]) {
+                area51ByProgram[key] = {
+                  programaCode: row.programaCode,
+                  programaNome: row.programaNome || "Programa sem nome",
+                  uf: row.uf || "",
+                  inRede:
+                    row.programaCode && redeByProgramCode[row.programaCode]
+                      ? redeByProgramCode[row.programaCode]
+                      : "",
+                  docentes: new Set(),
+                };
+              }
+              area51ByProgram[key].docentes.add(row.docenteId);
+            });
+
+          const area51TableRows = Object.values(area51ByProgram)
+            .map((item) => ({
+              programaCode: item.programaCode,
+              programaNome: item.programaNome,
+              uf: item.uf,
+              inRede: item.inRede,
+              docentes: item.docentes.size,
+            }))
+            .sort(
+              (a, b) =>
+                b.docentes - a.docentes ||
+                a.programaNome.localeCompare(b.programaNome, "pt-BR")
+            );
+
+          if (!area51TableRows.length) {
+            showError(
+              tableArea51ProgramasDiv,
+              "Sem dados de programas da Área 51 na base atual."
+            );
+          } else {
+            const tableRowsHtml = area51TableRows
+              .map(
+                (row, idx) => `
+                  <tr>
+                    <td class="num">${idx + 1}</td>
+                    <td>${escapeHtml(row.programaNome)}</td>
+                    <td>${escapeHtml(row.uf)}</td>
+                    <td>${escapeHtml(row.programaCode)}</td>
+                    <td>${escapeHtml(row.inRede || "-")}</td>
+                    <td class="num">${row.docentes}</td>
+                  </tr>
+                `
+              )
+              .join("");
+
+            tableArea51ProgramasDiv.innerHTML = `
+              <div class="table-wrap">
+                <table class="programs-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Programa</th>
+                      <th>UF</th>
+                      <th>CD_PROGRAMA_IES</th>
+                      <th>Em rede?</th>
+                      <th>Docentes distintos</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${tableRowsHtml}
+                  </tbody>
+                </table>
+              </div>
+            `;
+          }
+
+          const countsByUf = {};
+          rows.forEach((row) => {
+            if (!countsByUf[row.uf]) {
+              countsByUf[row.uf] = {
+                totalDocentes: new Set(),
+                area45Docentes: new Set(),
+              };
+            }
+            countsByUf[row.uf].totalDocentes.add(row.docenteId);
+            if (row.areaCode === "45") {
+              countsByUf[row.uf].area45Docentes.add(row.docenteId);
+            }
+          });
+
+          const mekkoRows = Object.keys(countsByUf)
+            .map((uf) => ({
+              uf,
+              total: countsByUf[uf].totalDocentes.size,
+              area45: countsByUf[uf].area45Docentes.size,
+            }))
+            .filter((row) => row.total > 0)
+            .sort((a, b) => b.total - a.total || a.uf.localeCompare(b.uf, "pt-BR"));
+
+          const totalBrasil = mekkoRows.reduce((acc, row) => acc + row.total, 0);
+          if (!totalBrasil) {
+            showError(chartUfDiv, "Sem dados para o marimekko por UF.");
+            return;
+          }
+
+          const mekkoX = [];
+          const mekkoWidth = [];
+          const mekkoLabels = [];
+          const mekkoArea45Pct = [];
+          const mekkoRestoPct = [];
+          const mekkoCustom = [];
+
+          let acumuladoPct = 0;
+          mekkoRows.forEach((row) => {
+            const shareUfPct = (row.total / totalBrasil) * 100;
+            const centro = acumuladoPct + shareUfPct / 2;
+            const area45Pct = (row.area45 / row.total) * 100;
+            const resto = row.total - row.area45;
+            const restoPct = 100 - area45Pct;
+
+            mekkoX.push(centro);
+            mekkoWidth.push(shareUfPct);
+            mekkoLabels.push(shareUfPct >= 2 ? row.uf : "");
+            mekkoArea45Pct.push(area45Pct);
+            mekkoRestoPct.push(restoPct);
+            mekkoCustom.push([row.uf, row.area45, resto, row.total, shareUfPct]);
+
+            acumuladoPct += shareUfPct;
+          });
+
+          const mekkoTraceArea45 = {
+            type: "bar",
+            name: "Área 45",
+            x: mekkoX,
+            y: mekkoArea45Pct,
+            width: mekkoWidth,
+            marker: {
+              color: "rgba(242, 140, 40, 0.95)",
+              line: { color: "rgba(165, 86, 18, 1)", width: 1 },
+            },
+            customdata: mekkoCustom,
+            hovertemplate:
+              "<b>UF %{customdata[0]}</b><br>Área 45: %{customdata[1]} docentes de %{customdata[3]} (%{y:.1f}%)<br>Peso da UF no total: %{customdata[4]:.1f}%<extra></extra>",
+          };
+
+          const mekkoTraceResto = {
+            type: "bar",
+            name: "Demais áreas",
+            x: mekkoX,
+            y: mekkoRestoPct,
+            width: mekkoWidth,
+            marker: {
+              color: "rgba(10, 98, 148, 0.70)",
+              line: { color: "rgba(10, 39, 64, 0.55)", width: 1 },
+            },
+            customdata: mekkoCustom,
+            hovertemplate:
+              "<b>UF %{customdata[0]}</b><br>Demais áreas: %{customdata[2]} docentes de %{customdata[3]} (%{y:.1f}%)<br>Peso da UF no total: %{customdata[4]:.1f}%<extra></extra>",
+          };
+
+          const mekkoLayout = {
+            title: {
+              text: "Proporção da Área 45 por UF e Número de Docentes em cada UF (2024)",
+              x: 0.5,
+              xanchor: "center",
+              pad: { b: 18 },
+            },
+            margin: { t: 90, r: 12, b: 120, l: 70 },
+            paper_bgcolor: "rgba(0,0,0,0)",
+            plot_bgcolor: "rgba(255,255,255,0.6)",
+            barmode: "stack",
+            bargap: 0,
+            xaxis: {
+              title: "Participação da UF no total de docentes",
+              range: [0, 100],
+              ticksuffix: "%",
+              tickvals: mekkoX,
+              ticktext: mekkoLabels,
+              tickangle: -90,
+              automargin: true,
+            },
+            yaxis: {
+              title: "Proporção",
+              range: [0, 100],
+              ticksuffix: "%",
+              dtick: 10,
+            },
+            legend: {
+              orientation: "h",
+              x: 0.5,
+              xanchor: "center",
+              y: -0.22,
+              yanchor: "top",
+            },
+          };
+
+          Plotly.newPlot(chartUfDiv, [mekkoTraceArea45, mekkoTraceResto], mekkoLayout, {
+            responsive: true,
+            displayModeBar: true,
+            modeBarButtonsToRemove: ["lasso2d", "select2d"],
+          });
+
+          const knownUfs = new Set(mekkoRows.map((row) => normalizeUf(row.uf)));
+          const selectedKey = chooseFeatureKey(geojson, knownUfs);
+          const featureidkey =
+            selectedKey.key === "id" ? undefined : `properties.${selectedKey.key}`;
+          const locations = [];
+          const zValues = [];
+          const customData = [];
+
+          (geojson.features || []).forEach((feature) => {
+            const rawId = getFeatureRawValue(feature, selectedKey.key);
+            const uf = normalizeUf(rawId);
+            const counts = countsByUf[uf];
+            const totalUf = counts ? counts.totalDocentes.size : 0;
+            const area45Uf = counts ? counts.area45Docentes.size : 0;
+            if (!counts || totalUf <= 0) {
+              return;
+            }
+
+            const pct45 = (area45Uf / totalUf) * 100;
+            locations.push(rawId);
+            zValues.push(pct45);
+            customData.push([uf, area45Uf, totalUf]);
+          });
+
+          if (!locations.length) {
+            showError(chartUfMapDiv, "Sem dados válidos para o mapa cloroplético por UF.");
+            return;
+          }
+
+          const mapTrace = {
+            type: "choropleth",
+            geojson,
+            locations,
+            z: zValues,
+            featureidkey,
+            colorscale: [
+              [0.00, "#ffffff"],
+              [0.17, "#e7f0ff"],
+              [0.33, "#2171b5"],
+              [0.50, "#6f99bf"],
+              [0.67, "#f28c28"],
+              [0.83, "#e07818"],
+              [1.00, "#cc5f00"],
+            ],
+            zmin: 0,
+            zmax: 30,
+            colorbar: {
+              title: "% Área 45",
+              tickvals: [0, 5, 10, 15, 20, 25, 30],
+              ticksuffix: "%",
+            },
+            marker: {
+              line: { color: "rgba(255,255,255,0.85)", width: 0.7 },
+            },
+            customdata: customData,
+            hovertemplate:
+              "<b>UF %{customdata[0]}</b><br>" +
+              "Área 45: %{customdata[1]} de %{customdata[2]}<br>" +
+              "Proporção: %{z:.2f}%<extra></extra>",
+          };
+
+          const mapLayout = {
+            title: {
+              text: "Mapa cloroplético: proporção de docentes da Área 45 por UF (2024)",
+              x: 0.5,
+              xanchor: "center",
+              pad: { b: 16 },
+            },
+            margin: { t: 70, r: 8, b: 8, l: 8 },
+            paper_bgcolor: "rgba(0,0,0,0)",
+            plot_bgcolor: "rgba(0,0,0,0)",
+            geo: {
+              fitbounds: "locations",
+              visible: false,
+              bgcolor: "rgba(0,0,0,0)",
+            },
+          };
+
+          Plotly.newPlot(chartUfMapDiv, [mapTrace], mapLayout, {
+            responsive: true,
+            displayModeBar: true,
+            modeBarButtonsToRemove: [
+              "lasso2d",
+              "select2d",
+              "autoScale2d",
+              "resetScale2d",
+              "zoomInGeo",
+              "zoomOutGeo",
+            ],
+          });
+        })
+        .catch((err) => {
+          showError(chartUfDiv, err && err.message ? err.message : "Erro ao gerar marimekko por UF.");
+          showError(
+            chartUfMapDiv,
+            err && err.message ? err.message : "Erro ao gerar mapa cloroplético por UF."
+          );
+        });
+
+      fetchCsvText(comparativoHierarquiaCsvUrl)
+        .then((csvText) => {
+          const rows = parseCsv(csvText)
+            .map((row) => ({
+              code: String(row.CD_AREA_AVALIACAO || "").trim(),
+              area: String(row.NM_AREA_AVALIACAO || "").trim(),
+              areaAbreviada: String(row.NM_AREA_AVALIACAO_ABREVIADA || "").trim(),
+              grandeArea: String(row.GRANDE_AREA_CAPES_SITE || "").trim(),
+              colegio: String(row.COLEGIO_CAPES_SITE || "").trim(),
+              count: Number(row.CONTAGEM_DOCENTES_2024 || 0),
+              is45: String(row.IS_AREA_45 || "").trim() === "1",
+              sameGrande45:
+                String(row.MESMA_GRANDE_AREA_AREA45 || "").trim() === "1",
+              sameColegio45: String(row.MESMO_COLEGIO_AREA45 || "").trim() === "1",
+            }))
+            .filter(
+              (row) =>
+                row.code && row.area && Number.isFinite(row.count) && row.count >= 0
+            );
+
+          if (!rows.length) {
+            showError(chartGrandeAreaDiv, "CSV sem dados para comparação hierárquica.");
+            showError(chartColegioDiv, "CSV sem dados para comparação hierárquica.");
+            showError(chartMondrianDiv, "CSV sem dados para comparação hierárquica.");
+            return;
+          }
+
+          const area45 = rows.find((row) => row.is45);
+          if (!area45) {
+            showError(chartGrandeAreaDiv, "Área 45 não encontrada no CSV comparativo.");
+            showError(chartColegioDiv, "Área 45 não encontrada no CSV comparativo.");
+            showError(chartMondrianDiv, "Área 45 não encontrada no CSV comparativo.");
+            return;
+          }
+
+          const grandeRows = rows
+            .filter((row) => row.sameGrande45)
+            .sort((a, b) => b.count - a.count || a.code.localeCompare(b.code));
+          const colegioRows = rows
+            .filter((row) => row.sameColegio45)
+            .sort((a, b) => b.count - a.count || a.code.localeCompare(b.code));
+
+          if (!grandeRows.length) {
+            showError(chartGrandeAreaDiv, "Sem dados para a grande área da Área 45.");
+          } else {
+            const totalGrande = grandeRows.reduce((acc, row) => acc + row.count, 0);
+            const area45Grande = grandeRows.find((row) => row.is45);
+            const shareGrande =
+              totalGrande > 0 && area45Grande
+                ? (area45Grande.count / totalGrande) * 100
+                : 0;
+            const labelsGrande = grandeRows.map((row) =>
+              row.areaAbreviada
+                ? `${row.areaAbreviada} (${row.code})`
+                : `${row.area} (${row.code})`
+            );
+            const valuesGrande = grandeRows.map((row) => row.count);
+            const textGrande = grandeRows.map((row) => {
+              const pct = totalGrande > 0 ? (row.count / totalGrande) * 100 : 0;
+              return `<b>${row.code}</b> (${pct.toFixed(1)}%)`;
+            });
+            const hoverGrande = grandeRows.map(
+              (row) => `${row.area} (Área ${row.code})`
+            );
+            const paletteGrande = [
+              "#9ecae1",
+              "#6baed6",
+              "#4292c6",
+              "#3182bd",
+              "#2171b5",
+              "#08519c",
+              "#08306b",
+            ];
+            const colorsGrande = grandeRows.map((row, idx) => {
+              if (row.is45) {
+                return "rgba(242, 140, 40, 0.95)";
+              }
+              return paletteGrande[idx % paletteGrande.length];
+            });
+
+            const traceGrande = {
+              type: "pie",
+              labels: labelsGrande,
+              values: valuesGrande,
+              hole: 0.38,
+              sort: false,
+              direction: "clockwise",
+              marker: {
+                colors: colorsGrande,
+                line: { color: "rgba(255,255,255,0.9)", width: 1 },
+              },
+              hovertext: hoverGrande,
+              text: textGrande,
+              textinfo: "text",
+              textposition: "inside",
+              insidetextorientation: "radial",
+              hovertemplate:
+                "<b>%{hovertext}</b><br>" +
+                "Docentes: %{value}<br>" +
+                "Participação: %{percent}<extra></extra>",
+            };
+
+            const layoutGrande = {
+              title: {
+                text:
+                  `Proporção do Número de Docentes na Grande Área ${area45.grandeArea} (2024)` +
+                  `<br><sup>Área 45: ${area45Grande ? area45Grande.count : 0} de ${totalGrande} (${shareGrande.toFixed(1)}%)</sup>`,
+                x: 0.5,
+                xanchor: "center",
+              },
+              margin: { t: 90, r: 14, b: 20, l: 14 },
+              paper_bgcolor: "rgba(0,0,0,0)",
+              plot_bgcolor: "rgba(255,255,255,0.6)",
+              legend: {
+                orientation: "v",
+                x: 1.02,
+                xanchor: "left",
+                y: 1,
+                yanchor: "top",
+                font: { size: 11 },
+              },
+            };
+
+            Plotly.newPlot(chartGrandeAreaDiv, [traceGrande], layoutGrande, {
+              responsive: true,
+              displayModeBar: true,
+              modeBarButtonsToRemove: ["lasso2d", "select2d"],
+            });
+          }
+
+          if (!colegioRows.length) {
+            showError(chartColegioDiv, "Sem dados para o colégio da Área 45.");
+          } else {
+            const labelsColegio = colegioRows.map((row) =>
+              row.areaAbreviada
+                ? `${row.areaAbreviada} (${row.code})`
+                : `${row.area} (${row.code})`
+            );
+            const valuesColegio = colegioRows.map((row) => row.count);
+            const totalColegio = colegioRows.reduce((acc, row) => acc + row.count, 0);
+            const textColegio = colegioRows.map((row) => {
+              const pct = totalColegio > 0 ? (row.count / totalColegio) * 100 : 0;
+              return `<b>${row.code}</b> (${pct.toFixed(1)}%)`;
+            });
+            const hoverColegio = colegioRows.map(
+              (row) =>
+                `${row.area} (Área ${row.code})<br>Grande área: ${row.grandeArea}`
+            );
+            const colorsColegio = colegioRows.map((row) => {
+              if (row.is45) {
+                return "rgba(242, 140, 40, 0.95)";
+              }
+              if (row.sameGrande45) {
+                return "rgba(37, 127, 190, 0.86)";
+              }
+              return "rgba(158, 198, 228, 0.95)";
+            });
+
+            const traceColegio = {
+              type: "pie",
+              labels: labelsColegio,
+              values: valuesColegio,
+              hole: 0.42,
+              sort: false,
+              marker: {
+                colors: colorsColegio,
+                line: { color: "rgba(255,255,255,0.9)", width: 1 },
+              },
+              hovertext: hoverColegio,
+              text: textColegio,
+              textinfo: "text",
+              textposition: "inside",
+              insidetextorientation: "radial",
+              hovertemplate:
+                "<b>%{hovertext}</b><br>" +
+                "Docentes: %{value}<br>" +
+                "Participação: %{percent}<extra></extra>",
+            };
+
+            const layoutColegio = {
+              title: {
+                text: `Proporção do Número de Docentes no Colégio<br> ${area45.colegio} (2024)`,
+                x: 0.5,
+                xanchor: "center",
+              },
+              margin: { t: 90, r: 14, b: 20, l: 14 },
+              paper_bgcolor: "rgba(0,0,0,0)",
+              plot_bgcolor: "rgba(255,255,255,0.6)",
+              legend: {
+                orientation: "v",
+                x: 1.02,
+                xanchor: "left",
+                y: 1,
+                yanchor: "top",
+                font: { size: 10.5 },
+              },
+            };
+
+            Plotly.newPlot(chartColegioDiv, [traceColegio], layoutColegio, {
+              responsive: true,
+              displayModeBar: true,
+              modeBarButtonsToRemove: ["lasso2d", "select2d"],
+            });
+          }
+
+          const totalAll = rows.reduce((acc, row) => acc + row.count, 0);
+          if (!(totalAll > 0)) {
+            showError(chartMondrianDiv, "Sem dados para o Mondrian por colégio.");
+          } else {
+            const collegePalette = [
+              "#1f77b4",
+              "#2a9d8f",
+              "#457b9d",
+              "#8ab17d",
+              "#577590",
+              "#4d908e",
+              "#7aa5c2",
+              "#6c8ebf",
+            ];
+
+            function hexToRgb(hex) {
+              const raw = String(hex || "").replace("#", "").trim();
+              if (raw.length !== 6) {
+                return { r: 10, g: 98, b: 148 };
+              }
+              return {
+                r: parseInt(raw.slice(0, 2), 16),
+                g: parseInt(raw.slice(2, 4), 16),
+                b: parseInt(raw.slice(4, 6), 16),
+              };
+            }
+
+            function rgba(hex, alpha) {
+              const rgb = hexToRgb(hex);
+              return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+            }
+
+            const byColegio = {};
+            rows.forEach((row) => {
+              const colegio = row.colegio || "N/D";
+              const grande = row.grandeArea || "N/D";
+              if (!byColegio[colegio]) {
+                byColegio[colegio] = { total: 0, grandes: {} };
+              }
+              if (!byColegio[colegio].grandes[grande]) {
+                byColegio[colegio].grandes[grande] = { total: 0, areas: [] };
+              }
+              byColegio[colegio].total += row.count;
+              byColegio[colegio].grandes[grande].total += row.count;
+              byColegio[colegio].grandes[grande].areas.push(row);
+            });
+
+            const ids = ["root"];
+            const labels = ["Todos os Docentes"];
+            const parents = [""];
+            const values = [totalAll];
+            const colors = ["rgba(230, 240, 250, 1)"];
+            const custom = [["", "", "", totalAll]];
+
+            const colegiosSorted = Object.entries(byColegio).sort(
+              (a, b) => b[1].total - a[1].total || a[0].localeCompare(b[0], "pt-BR")
+            );
+
+            colegiosSorted.forEach(([colegio, colegioData], idxColegio) => {
+              const baseColor = collegePalette[idxColegio % collegePalette.length];
+              const collegeId = `colegio::${colegio}`;
+              ids.push(collegeId);
+              labels.push(colegio);
+              parents.push("root");
+              values.push(colegioData.total);
+              colors.push(rgba(baseColor, 0.95));
+              custom.push([colegio, "", "", colegioData.total]);
+
+              const grandesSorted = Object.entries(colegioData.grandes).sort(
+                (a, b) => b[1].total - a[1].total || a[0].localeCompare(b[0], "pt-BR")
+              );
+
+              grandesSorted.forEach(([grande, grandeData]) => {
+                const grandeId = `grande::${colegio}::${grande}`;
+                ids.push(grandeId);
+                labels.push(grande);
+                parents.push(collegeId);
+                values.push(grandeData.total);
+                colors.push(rgba(baseColor, 0.78));
+                custom.push([colegio, grande, "", grandeData.total]);
+
+                const areasSorted = [...grandeData.areas].sort(
+                  (a, b) => b.count - a.count || a.code.localeCompare(b.code)
+                );
+                areasSorted.forEach((area) => {
+                  ids.push(`area::${area.code}`);
+                  labels.push(
+                    area.areaAbreviada
+                      ? `${area.areaAbreviada} (${area.code})`
+                      : `${area.area} (${area.code})`
+                  );
+                  parents.push(grandeId);
+                  values.push(area.count);
+                  colors.push(
+                    area.is45 ? "rgba(242, 140, 40, 0.98)" : rgba(baseColor, 0.58)
+                  );
+                  custom.push([colegio, grande, area.area, area.count]);
+                });
+              });
+            });
+
+            const traceMondrian = {
+              type: "treemap",
+              ids: ids,
+              labels: labels,
+              parents: parents,
+              values: values,
+              branchvalues: "total",
+              marker: {
+                colors: colors,
+                line: { width: 1, color: "rgba(255,255,255,0.8)" },
+              },
+              customdata: custom,
+              textinfo: "label",
+              hovertemplate:
+                "<b>%{label}</b><br>" +
+                "Colégio: %{customdata[0]}<br>" +
+                "Grande área: %{customdata[1]}<br>" +
+                "Área: %{customdata[2]}<br>" +
+                "Participação no total: %{percentRoot:.2%}<br>" +
+                "Participação no nível acima: %{percentParent:.2%}<extra></extra>",
+            };
+
+            const layoutMondrian = {
+              title: {
+                text: "Mondrian (Treemap): Docentes 2024 por Colégio, Grande Área e Área",
+                x: 0.5,
+                xanchor: "center",
+              },
+              margin: { t: 70, r: 8, b: 8, l: 8 },
+              paper_bgcolor: "rgba(0,0,0,0)",
+              plot_bgcolor: "rgba(255,255,255,0.6)",
+            };
+
+            Plotly.newPlot(chartMondrianDiv, [traceMondrian], layoutMondrian, {
+              responsive: true,
+              displayModeBar: true,
+              modeBarButtonsToRemove: ["lasso2d", "select2d"],
+            });
+          }
+        })
+        .catch((err) => {
+          showError(
+            chartGrandeAreaDiv,
+            err && err.message
+              ? err.message
+              : "Erro ao gerar gráfico de comparação por grande área."
+          );
+          showError(
+            chartColegioDiv,
+            err && err.message
+              ? err.message
+              : "Erro ao gerar gráfico de comparação por colégio."
+          );
+          showError(
+            chartMondrianDiv,
+            err && err.message
+              ? err.message
+              : "Erro ao gerar gráfico Mondrian por colégio."
+          );
+        });
+    })();
+  </script>
+
+  <footer class="site-footnote">
+    <a href="http://linktr.ee/rafaeldcsantos">Rafael Santos</a>
+  </footer>
+</body>
+
+</html>
