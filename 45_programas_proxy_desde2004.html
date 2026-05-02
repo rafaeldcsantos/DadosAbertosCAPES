@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Área 45 - Programas desde 2004 (Proxy por Discentes)</title>
+    <link rel="icon" type="image/svg+xml" href="./Images/favicon.svg" />
+    <link rel="stylesheet" href="./CSS/site.css" />
+    <style>
+      .section-card {
+        border: 1px solid rgba(13, 125, 189, 0.28);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 14px;
+      }
+
+      .section-title {
+        margin: 0 0 8px;
+        color: #08547f;
+        font-size: 1rem;
+      }
+
+      .section-card p,
+      .section-card ul,
+      .section-card ol {
+        margin: 0 0 10px;
+      }
+
+      .chart-box {
+        border: 1px dashed rgba(13, 125, 189, 0.4);
+        border-radius: 8px;
+        background: rgba(245, 249, 255, 0.9);
+        min-height: 280px;
+        padding: 10px;
+        margin-bottom: 10px;
+      }
+
+      :root {
+        --chart-max-width: 960px;
+      }
+
+      .chart-box [id^="chart-"] {
+        width: min(100%, var(--chart-max-width));
+        aspect-ratio: 4 / 3;
+        height: auto;
+        margin: 0 auto;
+      }
+
+      .chart-note {
+        margin-top: 8px;
+        font-size: 0.84rem;
+        color: rgba(10, 39, 64, 0.78);
+      }
+
+      .answer-pill {
+        margin: 0 0 12px;
+        border: 1px solid rgba(13, 125, 189, 0.35);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.96);
+        padding: 10px 12px;
+        color: rgba(10, 39, 64, 0.95);
+      }
+
+      .answer-pill strong {
+        color: #08547f;
+      }
+
+      .table-scroll {
+        overflow-x: auto;
+      }
+
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+        background: rgba(255, 255, 255, 0.95);
+      }
+
+      .data-table th,
+      .data-table td {
+        border: 1px solid rgba(13, 125, 189, 0.22);
+        padding: 8px 10px;
+        text-align: left;
+        white-space: nowrap;
+      }
+
+      .data-table thead th {
+        background: rgba(13, 125, 189, 0.14);
+        color: #08547f;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page" id="page">
+      <p class="page-home-link"><a href="./45_artigo.html">Voltar para a lista de relatórios</a></p>
+
+      <header class="page-header">
+        <h1>Programas na Área 45 desde 2004 (proxy por discentes)</h1>
+        <p>Reconstrução histórica usando <tt>CD_PROGRAMA_IES</tt> das planilhas de discentes.</p>
+      </header>
+
+      <main class="page-content">
+        <section class="tiles-panel">
+          <h2 class="panel-title">Série Histórica e Validação do Proxy</h2>
+          <div class="section-card">
+            <p class="answer-pill" id="resumo-programas-proxy">Carregando dados...</p>
+
+            <h3 class="section-title">Como calcular</h3>
+            <p>
+              A base usada é <tt>Data/programas_proxy_por_ano_area_desde2004.csv</tt>, gerada a partir de
+              <tt>RawData/br-capes-colsucup-discentes-*.xlsx</tt>.
+              Para cada par <tt>(AN_BASE, CD_AREA_AVALIACAO)</tt>, contamos <tt>CD_PROGRAMA_IES</tt> distintos.
+            </p>
+            <p>
+              Para validar a qualidade do proxy, comparamos 2013–2024 contra
+              <tt>Data/programas_contagem_por_ano_area.csv</tt> (contagens oficiais de programas ativos e distintos).
+            </p>
+
+            <h3 class="section-title">Programas (proxy) por ano na Área 45</h3>
+            <div class="chart-box">
+              <div id="chart-programas-proxy-area45"></div>
+              <p class="chart-note">
+                Série anual 2004–2024 (proxy por discentes). A linha pontilhada marca 2013, início da série oficial
+                de programas no acervo local.
+              </p>
+            </div>
+
+            <h3 class="section-title">Proxy vs oficial na Área 45 (2013–2024)</h3>
+            <div class="chart-box">
+              <div id="chart-programas-proxy-vs-oficial"></div>
+              <p class="chart-note">
+                Comparação entre proxy de discentes, programas oficiais ativos e programas oficiais distintos.
+              </p>
+            </div>
+
+            <h3 class="section-title">Erro percentual do proxy (2013–2024)</h3>
+            <div class="chart-box">
+              <div id="chart-programas-erro-pct"></div>
+              <p class="chart-note">
+                Erro percentual absoluto anual do proxy frente à série oficial (ativos e distintos).
+              </p>
+            </div>
+
+            <h3 class="section-title">Tabela anual da Área 45</h3>
+            <div class="table-scroll">
+              <table class="data-table" id="tabela-programas-proxy-area45">
+                <thead>
+                  <tr>
+                    <th>Ano</th>
+                    <th>Proxy (discentes)</th>
+                    <th>Oficial ativos</th>
+                    <th>Oficial distintos</th>
+                    <th>Dif. proxy - ativos</th>
+                    <th>Dif. proxy - distintos</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colspan="6">Carregando tabela...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <footer class="site-footnote">
+      <a href="http://linktr.ee/rafaeldcsantos">Rafael Santos</a>
+    </footer>
+
+    <script src="./JS/plotly.min.js"></script>
+    <script>
+      (function () {
+        const areaCode = "45";
+        const proxyCsvUrl = "./Data/programas_proxy_por_ano_area_desde2004.csv";
+        const oficialCsvUrl = "./Data/programas_contagem_por_ano_area.csv";
+
+        const resumoEl = document.getElementById("resumo-programas-proxy");
+        const tableBodyEl = document.querySelector("#tabela-programas-proxy-area45 tbody");
+
+        const chartProxyArea45Div = document.getElementById("chart-programas-proxy-area45");
+        const chartVsOficialDiv = document.getElementById("chart-programas-proxy-vs-oficial");
+        const chartErroPctDiv = document.getElementById("chart-programas-erro-pct");
+
+        function parseCsvLine(line) {
+          const out = [];
+          let current = "";
+          let inQuotes = false;
+          for (let i = 0; i < line.length; i += 1) {
+            const ch = line[i];
+            if (ch === '"') {
+              if (inQuotes && line[i + 1] === '"') {
+                current += '"';
+                i += 1;
+              } else {
+                inQuotes = !inQuotes;
+              }
+              continue;
+            }
+            if (ch === "," && !inQuotes) {
+              out.push(current);
+              current = "";
+              continue;
+            }
+            current += ch;
+          }
+          out.push(current);
+          return out;
+        }
+
+        function parseCsv(text) {
+          const lines = String(text || "")
+            .split(/\r?\n/)
+            .filter((line) => line.trim().length > 0);
+          if (lines.length < 2) {
+            return [];
+          }
+          const headers = parseCsvLine(lines[0]).map((h) => h.trim());
+          return lines.slice(1).map((line) => {
+            const cols = parseCsvLine(line);
+            const row = {};
+            headers.forEach((header, idx) => {
+              row[header] = (cols[idx] || "").trim();
+            });
+            return row;
+          });
+        }
+
+        function safeNumber(value) {
+          const n = Number(value);
+          return Number.isFinite(n) ? n : 0;
+        }
+
+        function pctAbsDiff(base, test) {
+          if (!Number.isFinite(base) || base <= 0) {
+            return null;
+          }
+          return (Math.abs(test - base) / base) * 100;
+        }
+
+        function setResumo(message) {
+          if (resumoEl) {
+            resumoEl.innerHTML = message;
+          }
+        }
+
+        function showError(target, message) {
+          if (!target) {
+            return;
+          }
+          target.innerHTML = `<p>${message}</p>`;
+        }
+
+        function setTableMessage(message) {
+          if (tableBodyEl) {
+            tableBodyEl.innerHTML = `<tr><td colspan="6">${message}</td></tr>`;
+          }
+        }
+
+        function fetchCsvText(url) {
+          return fetch(url).then((resp) => {
+            if (!resp.ok) {
+              throw new Error(`Falha ao carregar CSV: HTTP ${resp.status} (${url})`);
+            }
+            return resp.text();
+          });
+        }
+
+        if (typeof Plotly === "undefined") {
+          const msg = "Falha: biblioteca Plotly não carregada.";
+          setResumo(msg);
+          setTableMessage(msg);
+          showError(chartProxyArea45Div, msg);
+          showError(chartVsOficialDiv, msg);
+          showError(chartErroPctDiv, msg);
+          return;
+        }
+
+        Promise.all([fetchCsvText(proxyCsvUrl), fetchCsvText(oficialCsvUrl)])
+          .then(([proxyCsvText, oficialCsvText]) => {
+            const proxyRows = parseCsv(proxyCsvText)
+              .map((row) => ({
+                year: safeNumber(row.AN_BASE),
+                areaCode: String(row.CD_AREA_AVALIACAO || "").trim(),
+                proxyCount: safeNumber(row.CONTAGEM_PROGRAMAS_PROXY_DISCENTES),
+              }))
+              .filter((row) => row.year > 0 && row.areaCode === areaCode)
+              .sort((a, b) => a.year - b.year);
+
+            const oficialRows = parseCsv(oficialCsvText)
+              .map((row) => ({
+                year: safeNumber(row.AN_BASE),
+                areaCode: String(row.CD_AREA_AVALIACAO || "").trim(),
+                ativos: safeNumber(row.CONTAGEM_PROGRAMAS_ATIVOS_DISTINTOS),
+                distintos: safeNumber(row.CONTAGEM_PROGRAMAS_DISTINTOS),
+              }))
+              .filter((row) => row.year > 0 && row.areaCode === areaCode)
+              .sort((a, b) => a.year - b.year);
+
+            if (!proxyRows.length) {
+              const msg = "Não há dados do proxy para a Área 45.";
+              setResumo(msg);
+              setTableMessage(msg);
+              showError(chartProxyArea45Div, msg);
+              showError(chartVsOficialDiv, msg);
+              showError(chartErroPctDiv, msg);
+              return;
+            }
+
+            const proxyByYear = {};
+            proxyRows.forEach((row) => {
+              proxyByYear[row.year] = row.proxyCount;
+            });
+
+            const oficialByYear = {};
+            oficialRows.forEach((row) => {
+              oficialByYear[row.year] = {
+                ativos: row.ativos,
+                distintos: row.distintos,
+              };
+            });
+
+            const yearsProxy = Object.keys(proxyByYear)
+              .map((y) => Number(y))
+              .sort((a, b) => a - b);
+
+            const firstYear = yearsProxy[0];
+            const lastYear = yearsProxy[yearsProxy.length - 1];
+            const firstValue = proxyByYear[firstYear];
+            const lastValue = proxyByYear[lastYear];
+            const delta = lastValue - firstValue;
+            const deltaPct = firstValue > 0 ? (delta / firstValue) * 100 : null;
+
+            const yearsCommon = yearsProxy.filter((year) => Object.prototype.hasOwnProperty.call(oficialByYear, year));
+
+            const absPctAtivos = yearsCommon.map((year) =>
+              pctAbsDiff(oficialByYear[year].ativos, proxyByYear[year])
+            );
+            const absPctDistintos = yearsCommon.map((year) =>
+              pctAbsDiff(oficialByYear[year].distintos, proxyByYear[year])
+            );
+
+            const validAtivos = absPctAtivos.filter((v) => v !== null);
+            const validDistintos = absPctDistintos.filter((v) => v !== null);
+
+            const mapeAtivos =
+              validAtivos.length > 0
+                ? validAtivos.reduce((acc, value) => acc + safeNumber(value), 0) / validAtivos.length
+                : null;
+            const mapeDistintos =
+              validDistintos.length > 0
+                ? validDistintos.reduce((acc, value) => acc + safeNumber(value), 0) / validDistintos.length
+                : null;
+
+            const proxy2004_2009 = [2004, 2005, 2006, 2007, 2008, 2009]
+              .map((year) => proxyByYear[year])
+              .filter((value) => Number.isFinite(value));
+            const avg2004_2009 =
+              proxy2004_2009.length > 0
+                ? proxy2004_2009.reduce((acc, value) => acc + value, 0) / proxy2004_2009.length
+                : null;
+
+            setResumo(
+              `<strong>Área 45 (proxy)</strong>: ${firstValue} programas em ${firstYear} → ${lastValue} em ${lastYear} ` +
+                `(<strong>${delta >= 0 ? "+" : ""}${delta}</strong>, ${deltaPct === null ? "n/d" : `${deltaPct.toFixed(2)}%`}). ` +
+                `Média 2004–2009: <strong>${avg2004_2009 === null ? "n/d" : avg2004_2009.toFixed(1)}</strong>. ` +
+                `Validação 2013–2024: erro percentual médio absoluto do proxy = ` +
+                `<strong>${mapeDistintos === null ? "n/d" : `${mapeDistintos.toFixed(2)}%`}</strong> (vs oficiais distintos) e ` +
+                `<strong>${mapeAtivos === null ? "n/d" : `${mapeAtivos.toFixed(2)}%`}</strong> (vs oficiais ativos).`
+            );
+
+            const tableRows = yearsProxy
+              .map((year) => {
+                const proxyVal = proxyByYear[year];
+                const oficial = oficialByYear[year];
+                const ativos = oficial ? oficial.ativos : null;
+                const distintos = oficial ? oficial.distintos : null;
+                const diffAtivos = ativos === null ? null : proxyVal - ativos;
+                const diffDistintos = distintos === null ? null : proxyVal - distintos;
+                return {
+                  year,
+                  proxyVal,
+                  ativos,
+                  distintos,
+                  diffAtivos,
+                  diffDistintos,
+                };
+              })
+              .sort((a, b) => a.year - b.year);
+
+            if (tableBodyEl) {
+              tableBodyEl.innerHTML = tableRows
+                .map((row) => {
+                  const diffAtivosTxt = row.diffAtivos === null ? "n/d" : `${row.diffAtivos >= 0 ? "+" : ""}${row.diffAtivos}`;
+                  const diffDistintosTxt =
+                    row.diffDistintos === null ? "n/d" : `${row.diffDistintos >= 0 ? "+" : ""}${row.diffDistintos}`;
+                  return (
+                    `<tr>` +
+                    `<td>${row.year}</td>` +
+                    `<td>${row.proxyVal.toLocaleString("pt-BR")}</td>` +
+                    `<td>${row.ativos === null ? "n/d" : row.ativos.toLocaleString("pt-BR")}</td>` +
+                    `<td>${row.distintos === null ? "n/d" : row.distintos.toLocaleString("pt-BR")}</td>` +
+                    `<td>${diffAtivosTxt}</td>` +
+                    `<td>${diffDistintosTxt}</td>` +
+                    `</tr>`
+                  );
+                })
+                .join("");
+            }
+
+            const yProxy = yearsProxy.map((year) => proxyByYear[year]);
+
+            Plotly.newPlot(
+              chartProxyArea45Div,
+              [
+                {
+                  type: "scatter",
+                  mode: "lines+markers",
+                  x: yearsProxy,
+                  y: yProxy,
+                  name: "Programas proxy (discentes)",
+                  line: { color: "rgba(13, 125, 189, 0.95)", width: 3 },
+                  marker: { color: "rgba(13, 125, 189, 0.95)", size: 6 },
+                  hovertemplate: "Ano %{x}<br>Proxy: %{y}<extra></extra>",
+                },
+              ],
+              {
+                title: { text: "Área 45: programas proxy por ano (2004–2024)", x: 0.5, xanchor: "center" },
+                margin: { t: 70, r: 20, b: 60, l: 70 },
+                paper_bgcolor: "rgba(0,0,0,0)",
+                plot_bgcolor: "rgba(255,255,255,0.6)",
+                xaxis: { title: "Ano base", tickmode: "array", tickvals: yearsProxy },
+                yaxis: { title: "Programas (proxy por CD_PROGRAMA_IES)", rangemode: "tozero" },
+                shapes: [
+                  {
+                    type: "line",
+                    x0: 2013,
+                    x1: 2013,
+                    y0: 0,
+                    y1: 1,
+                    yref: "paper",
+                    line: { color: "rgba(10,39,64,0.35)", dash: "dot" },
+                  },
+                ],
+              },
+              { responsive: true, displayModeBar: true, modeBarButtonsToRemove: ["lasso2d", "select2d"] }
+            );
+
+            if (!yearsCommon.length) {
+              showError(chartVsOficialDiv, "Não há anos em comum entre proxy e base oficial.");
+              showError(chartErroPctDiv, "Não há anos em comum para calcular erro percentual.");
+              return;
+            }
+
+            const yProxyCommon = yearsCommon.map((year) => proxyByYear[year]);
+            const yAtivos = yearsCommon.map((year) => oficialByYear[year].ativos);
+            const yDistintos = yearsCommon.map((year) => oficialByYear[year].distintos);
+
+            Plotly.newPlot(
+              chartVsOficialDiv,
+              [
+                {
+                  type: "scatter",
+                  mode: "lines+markers",
+                  x: yearsCommon,
+                  y: yProxyCommon,
+                  name: "Proxy (discentes)",
+                  line: { color: "rgba(13, 125, 189, 0.95)", width: 3 },
+                  marker: { color: "rgba(13, 125, 189, 0.95)", size: 6 },
+                },
+                {
+                  type: "scatter",
+                  mode: "lines+markers",
+                  x: yearsCommon,
+                  y: yDistintos,
+                  name: "Oficial distintos",
+                  line: { color: "rgba(9, 95, 63, 0.92)", width: 2.8 },
+                  marker: { color: "rgba(9, 95, 63, 0.92)", size: 6 },
+                },
+                {
+                  type: "scatter",
+                  mode: "lines+markers",
+                  x: yearsCommon,
+                  y: yAtivos,
+                  name: "Oficial ativos",
+                  line: { color: "rgba(242, 140, 40, 0.92)", width: 2.8 },
+                  marker: { color: "rgba(242, 140, 40, 0.92)", size: 6 },
+                },
+              ],
+              {
+                title: { text: "Área 45: proxy vs oficial (2013–2024)", x: 0.5, xanchor: "center" },
+                margin: { t: 70, r: 20, b: 60, l: 70 },
+                paper_bgcolor: "rgba(0,0,0,0)",
+                plot_bgcolor: "rgba(255,255,255,0.6)",
+                xaxis: { title: "Ano base", tickmode: "array", tickvals: yearsCommon },
+                yaxis: { title: "Número de programas", rangemode: "tozero" },
+                legend: { orientation: "h", x: 0.5, xanchor: "center", y: 1.12, yanchor: "bottom" },
+              },
+              { responsive: true, displayModeBar: true, modeBarButtonsToRemove: ["lasso2d", "select2d"] }
+            );
+
+            const barsAtivos = yearsCommon.map((year) => pctAbsDiff(oficialByYear[year].ativos, proxyByYear[year]));
+            const barsDistintos = yearsCommon.map((year) =>
+              pctAbsDiff(oficialByYear[year].distintos, proxyByYear[year])
+            );
+
+            Plotly.newPlot(
+              chartErroPctDiv,
+              [
+                {
+                  type: "bar",
+                  x: yearsCommon,
+                  y: barsDistintos,
+                  name: "Erro % abs vs oficial distintos",
+                  marker: { color: "rgba(9, 95, 63, 0.88)" },
+                  hovertemplate: "Ano %{x}<br>Erro vs distintos: %{y:.2f}%<extra></extra>",
+                },
+                {
+                  type: "bar",
+                  x: yearsCommon,
+                  y: barsAtivos,
+                  name: "Erro % abs vs oficial ativos",
+                  marker: { color: "rgba(242, 140, 40, 0.88)" },
+                  hovertemplate: "Ano %{x}<br>Erro vs ativos: %{y:.2f}%<extra></extra>",
+                },
+              ],
+              {
+                barmode: "group",
+                title: { text: "Área 45: erro percentual absoluto do proxy", x: 0.5, xanchor: "center" },
+                margin: { t: 70, r: 20, b: 60, l: 70 },
+                paper_bgcolor: "rgba(0,0,0,0)",
+                plot_bgcolor: "rgba(255,255,255,0.6)",
+                xaxis: { title: "Ano base", tickmode: "array", tickvals: yearsCommon },
+                yaxis: { title: "Erro percentual absoluto", ticksuffix: "%", rangemode: "tozero" },
+                legend: { orientation: "h", x: 0.5, xanchor: "center", y: 1.12, yanchor: "bottom" },
+              },
+              { responsive: true, displayModeBar: true, modeBarButtonsToRemove: ["lasso2d", "select2d"] }
+            );
+          })
+          .catch((err) => {
+            const message = err && err.message ? err.message : "Erro ao carregar dados.";
+            setResumo(`Falha no carregamento dos dados: ${message}`);
+            setTableMessage(message);
+            showError(chartProxyArea45Div, message);
+            showError(chartVsOficialDiv, message);
+            showError(chartErroPctDiv, message);
+          });
+      })();
+    </script>
+  </body>
+</html>

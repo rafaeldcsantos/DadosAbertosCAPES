@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Área 45 - Fluxo de Novos Alunos (Quadrienais)</title>
+    <link rel="icon" type="image/svg+xml" href="./Images/favicon.svg" />
+    <link rel="stylesheet" href="./CSS/site.css" />
+    <style>
+      .section-card {
+        border: 1px solid rgba(13, 125, 189, 0.28);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 14px;
+      }
+
+      .section-title {
+        margin: 0 0 8px;
+        color: #08547f;
+        font-size: 1rem;
+      }
+
+      .section-card p,
+      .section-card ul,
+      .section-card ol {
+        margin: 0 0 10px;
+      }
+
+      .chart-box {
+        border: 1px dashed rgba(13, 125, 189, 0.4);
+        border-radius: 8px;
+        background: rgba(245, 249, 255, 0.9);
+        min-height: 280px;
+        padding: 10px;
+        margin-bottom: 10px;
+      }
+
+      :root {
+        --chart-max-width: 960px;
+      }
+
+      .chart-box [id^="chart-"] {
+        width: min(100%, var(--chart-max-width));
+        aspect-ratio: 4 / 3;
+        height: auto;
+        margin: 0 auto;
+      }
+
+      #chart-fluxo-crescimento-abs,
+      #chart-fluxo-crescimento-pct {
+        width: min(100%, 1040px);
+        min-height: 760px;
+        height: auto;
+        aspect-ratio: auto;
+      }
+
+      .chart-note {
+        margin-top: 8px;
+        font-size: 0.84rem;
+        color: rgba(10, 39, 64, 0.78);
+      }
+
+      .answer-pill {
+        margin: 0 0 12px;
+        border: 1px solid rgba(13, 125, 189, 0.35);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.96);
+        padding: 10px 12px;
+        color: rgba(10, 39, 64, 0.95);
+      }
+
+      .answer-pill strong {
+        color: #08547f;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page" id="page">
+      <p class="page-home-link"><a href="./45_artigo.html">Voltar para a lista de relatórios</a></p>
+
+      <header class="page-header">
+        <h1>Fluxo de novos alunos na Área 45 (anos quadrienais)</h1>
+        <p>Recorte em 2016, 2020 e 2024, usando ST_INGRESSANTE = SIM.</p>
+      </header>
+
+      <main class="page-content">
+        <section class="tiles-panel">
+          <h2 class="panel-title">Novos Alunos por Ano de Avaliação</h2>
+          <div class="section-card">
+            <p class="answer-pill" id="resumo-fluxo">Carregando dados...</p>
+
+            <h3 class="section-title">Como calcular</h3>
+            <p>
+              A base usada é <tt>Data/discentes_ingressantes_por_ano_area.csv</tt>, gerada a partir de
+              <tt>RawData/br-capes-colsucup-discentes-*.xlsx</tt> com filtro
+              <tt>ST_INGRESSANTE = SIM</tt>.
+              O indicador principal desta página é
+              <tt>CONTAGEM_INGRESSANTES_ID_PESSOA</tt> (ID de aluno distinto por ano e área).
+            </p>
+            <p>
+              Observação: este é um proxy de fluxo de entrada anual no sistema CAPES, não um censo de todos os
+              matriculados.
+            </p>
+
+            <h3 class="section-title">Séries de novos alunos por área (Área 45 destacada)</h3>
+            <div class="chart-box">
+              <div id="chart-fluxo-serie"></div>
+              <p class="chart-note">
+                Séries de todas as áreas em 2016, 2020 e 2024; a Área 45 está destacada em laranja.
+              </p>
+            </div>
+
+            <h3 class="section-title">Comparação de crescimento entre áreas (absoluto)</h3>
+            <div class="chart-box">
+              <div id="chart-fluxo-crescimento-abs"></div>
+              <p class="chart-note">
+                Variação absoluta de novos alunos entre 2016 e 2024. Área 45 em laranja.
+              </p>
+            </div>
+
+            <h3 class="section-title">Comparação de crescimento entre áreas (percentual)</h3>
+            <div class="chart-box">
+              <div id="chart-fluxo-crescimento-pct"></div>
+              <p class="chart-note">
+                Variação percentual de novos alunos entre 2016 e 2024. Área 45 em laranja.
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <footer class="site-footnote">
+      <a href="http://linktr.ee/rafaeldcsantos">Rafael Santos</a>
+    </footer>
+
+    <script src="./JS/plotly.min.js"></script>
+    <script>
+      (function () {
+        const fluxoCsvUrl = "./Data/discentes_ingressantes_por_ano_area.csv";
+        const abreviacoesCsvUrl = "./Data/areas_avaliacao_abreviacoes.csv";
+        const yearsAllowed = new Set([2016, 2020, 2024]);
+
+        const chartSerieDiv = document.getElementById("chart-fluxo-serie");
+        const chartAbsDiv = document.getElementById("chart-fluxo-crescimento-abs");
+        const chartPctDiv = document.getElementById("chart-fluxo-crescimento-pct");
+        const resumoEl = document.getElementById("resumo-fluxo");
+
+        function parseCsvLine(line) {
+          const out = [];
+          let current = "";
+          let inQuotes = false;
+          for (let i = 0; i < line.length; i += 1) {
+            const ch = line[i];
+            if (ch === '"') {
+              if (inQuotes && line[i + 1] === '"') {
+                current += '"';
+                i += 1;
+              } else {
+                inQuotes = !inQuotes;
+              }
+              continue;
+            }
+            if (ch === "," && !inQuotes) {
+              out.push(current);
+              current = "";
+              continue;
+            }
+            current += ch;
+          }
+          out.push(current);
+          return out;
+        }
+
+        function parseCsv(text) {
+          const lines = String(text || "")
+            .split(/\r?\n/)
+            .filter((line) => line.trim().length > 0);
+          if (lines.length < 2) {
+            return [];
+          }
+          const headers = parseCsvLine(lines[0]).map((h) => h.trim());
+          return lines.slice(1).map((line) => {
+            const cols = parseCsvLine(line);
+            const row = {};
+            headers.forEach((header, idx) => {
+              row[header] = (cols[idx] || "").trim();
+            });
+            return row;
+          });
+        }
+
+        function safeNumber(value) {
+          const n = Number(value);
+          return Number.isFinite(n) ? n : 0;
+        }
+
+        function pctChange(start, end) {
+          if (!Number.isFinite(start) || start <= 0) {
+            return null;
+          }
+          return ((end - start) / start) * 100;
+        }
+
+        function showError(target, message) {
+          if (!target) {
+            return;
+          }
+          target.innerHTML = `<p>${message}</p>`;
+        }
+
+        function setResumo(message) {
+          if (resumoEl) {
+            resumoEl.innerHTML = message;
+          }
+        }
+
+        function fetchCsvText(url) {
+          return fetch(url).then((resp) => {
+            if (!resp.ok) {
+              throw new Error(`Falha ao carregar CSV: HTTP ${resp.status} (${url})`);
+            }
+            return resp.text();
+          });
+        }
+
+        if (typeof Plotly === "undefined") {
+          setResumo("Falha: biblioteca Plotly não carregada.");
+          showError(chartSerieDiv, "Plotly não foi carregado.");
+          showError(chartAbsDiv, "Plotly não foi carregado.");
+          showError(chartPctDiv, "Plotly não foi carregado.");
+          return;
+        }
+
+        Promise.all([fetchCsvText(fluxoCsvUrl), fetchCsvText(abreviacoesCsvUrl)])
+          .then(([fluxoCsvText, abreviacoesCsvText]) => {
+            const abreviacoesByCode = {};
+            parseCsv(abreviacoesCsvText).forEach((row) => {
+              const code = String(row.CD_AREA_AVALIACAO || "").trim();
+              const label =
+                String(row.NM_AREA_AVALIACAO_ABREVIADA || "").trim() ||
+                String(row.NM_AREA_AVALIACAO || "").trim();
+              if (code) {
+                abreviacoesByCode[code] = label;
+              }
+            });
+
+            const rows = parseCsv(fluxoCsvText)
+              .map((row) => ({
+                year: safeNumber(row.AN_BASE),
+                areaCode: String(row.CD_AREA_AVALIACAO || "").trim(),
+                areaName: String(row.NM_AREA_AVALIACAO || "").trim(),
+                entrantsPeople: safeNumber(row.CONTAGEM_INGRESSANTES_ID_PESSOA),
+                entrantsPeopleProgram: safeNumber(row.CONTAGEM_INGRESSOS_ID_PESSOA_PROGRAMA),
+              }))
+              .filter(
+                (row) =>
+                  row.year > 0 &&
+                  yearsAllowed.has(row.year) &&
+                  row.areaCode &&
+                  row.areaName
+              );
+
+            if (!rows.length) {
+              setResumo("Não há dados disponíveis para os anos 2016, 2020 e 2024.");
+              showError(chartSerieDiv, "CSV sem dados para o gráfico de séries.");
+              showError(chartAbsDiv, "CSV sem dados para o comparativo absoluto.");
+              showError(chartPctDiv, "CSV sem dados para o comparativo percentual.");
+              return;
+            }
+
+            const years = Array.from(new Set(rows.map((row) => row.year))).sort((a, b) => a - b);
+            const firstYear = years[0];
+            const lastYear = years[years.length - 1];
+
+            const areaStats = {};
+            rows.forEach((row) => {
+              if (!areaStats[row.areaCode]) {
+                areaStats[row.areaCode] = {
+                  code: row.areaCode,
+                  name: row.areaName,
+                  byYearPeople: {},
+                  byYearPeopleProgram: {},
+                };
+              }
+              areaStats[row.areaCode].byYearPeople[row.year] = row.entrantsPeople;
+              areaStats[row.areaCode].byYearPeopleProgram[row.year] = row.entrantsPeopleProgram;
+            });
+
+            const areaSeriesRows = Object.values(areaStats).map((item) => ({
+              code: item.code,
+              label: `${abreviacoesByCode[item.code] || item.name} (${item.code})`,
+              seriesPeople: years.map((year) => safeNumber(item.byYearPeople[year])),
+              seriesPeopleProgram: years.map((year) => safeNumber(item.byYearPeopleProgram[year])),
+            }));
+
+            const area45 = areaSeriesRows.find((row) => row.code === "45");
+            if (!area45) {
+              setResumo("A Área 45 não foi encontrada no CSV de ingressantes.");
+              showError(chartSerieDiv, "Área 45 ausente na base.");
+              showError(chartAbsDiv, "Área 45 ausente na base.");
+              showError(chartPctDiv, "Área 45 ausente na base.");
+              return;
+            }
+
+            const y45 = area45.seriesPeople;
+            const start45 = y45[0];
+            const end45 = y45[y45.length - 1];
+            const mid45 = y45.length > 1 ? y45[Math.floor(y45.length / 2)] : 0;
+            const delta45 = end45 - start45;
+            const delta45Pct = pctChange(start45, end45);
+
+            const totalByYear = {};
+            rows.forEach((row) => {
+              totalByYear[row.year] = (totalByYear[row.year] || 0) + row.entrantsPeople;
+            });
+            const shareStart = totalByYear[firstYear] > 0 ? (start45 / totalByYear[firstYear]) * 100 : 0;
+            const shareEnd = totalByYear[lastYear] > 0 ? (end45 / totalByYear[lastYear]) * 100 : 0;
+
+            setResumo(
+              `<strong>Área 45</strong>: ${start45} novos alunos em ${firstYear} → ${end45} em ${lastYear} ` +
+                `(<strong>${delta45 >= 0 ? "+" : ""}${delta45}</strong>, ${delta45Pct === null ? "n/d" : `${delta45Pct.toFixed(2)}%`}). ` +
+                `Em 2020: ${mid45}. Participação no total: ${shareStart.toFixed(2)}% → ${shareEnd.toFixed(2)}%.`
+            );
+
+            areaSeriesRows.sort((a, b) => {
+              if (a.code === "45") {
+                return -1;
+              }
+              if (b.code === "45") {
+                return 1;
+              }
+              return a.label.localeCompare(b.label, "pt-BR");
+            });
+
+            const tracesSerie = areaSeriesRows.map((row) => {
+              const isArea45 = row.code === "45";
+              return {
+                type: "scatter",
+                mode: isArea45 ? "lines+markers" : "lines",
+                name: isArea45 ? `Área 45 (${row.label})` : row.label,
+                x: years,
+                y: row.seriesPeople,
+                line: {
+                  color: isArea45 ? "rgba(242, 140, 40, 0.98)" : "rgba(10, 98, 148, 0.25)",
+                  width: isArea45 ? 3.8 : 1.2,
+                },
+                marker: isArea45
+                  ? { color: "rgba(242, 140, 40, 0.98)", size: 7 }
+                  : { color: "rgba(10, 98, 148, 0.4)", size: 4 },
+                hovertemplate:
+                  `<b>${row.label}</b><br>` +
+                  "Ano %{x}<br>Novos alunos (ID): %{y}<extra></extra>",
+                showlegend: isArea45,
+              };
+            });
+
+            const layoutSerie = {
+              title: {
+                text: "Novos alunos por área (2016, 2020 e 2024)",
+                x: 0.5,
+                xanchor: "center",
+              },
+              margin: { t: 70, r: 20, b: 60, l: 70 },
+              paper_bgcolor: "rgba(0,0,0,0)",
+              plot_bgcolor: "rgba(255,255,255,0.6)",
+              xaxis: {
+                title: "Ano base",
+                tickmode: "array",
+                tickvals: years,
+              },
+              yaxis: {
+                title: "Novos alunos (ID_PESSOA distintos)",
+                rangemode: "tozero",
+              },
+              legend: {
+                orientation: "h",
+                x: 0.5,
+                xanchor: "center",
+                y: 1.12,
+                yanchor: "bottom",
+              },
+            };
+
+            Plotly.newPlot(chartSerieDiv, tracesSerie, layoutSerie, {
+              responsive: true,
+              displayModeBar: true,
+              modeBarButtonsToRemove: ["lasso2d", "select2d"],
+            });
+
+            const growthRows = areaSeriesRows.map((row) => {
+              const start = safeNumber(row.seriesPeople[0]);
+              const end = safeNumber(row.seriesPeople[row.seriesPeople.length - 1]);
+              const delta = end - start;
+              const deltaPct = pctChange(start, end);
+              return {
+                code: row.code,
+                label: row.label,
+                start,
+                end,
+                delta,
+                deltaPct,
+              };
+            });
+
+            const growthRowsAbs = [...growthRows].sort((a, b) => {
+              if (b.delta !== a.delta) {
+                return b.delta - a.delta;
+              }
+              return a.label.localeCompare(b.label, "pt-BR");
+            });
+
+            const dynamicAbsHeight = Math.max(760, 180 + growthRowsAbs.length * 22);
+            const absLabels = growthRowsAbs.map((row) => row.label);
+            const absValues = growthRowsAbs.map((row) => row.delta);
+            const absColors = growthRowsAbs.map((row) =>
+              row.code === "45" ? "rgba(242, 140, 40, 0.95)" : "rgba(10, 98, 148, 0.78)"
+            );
+            const absCustom = growthRowsAbs.map((row) => [
+              row.start,
+              row.end,
+              row.deltaPct === null ? "n/d" : `${row.deltaPct.toFixed(2)}%`,
+            ]);
+
+            const traceAbs = {
+              type: "bar",
+              orientation: "h",
+              y: absLabels,
+              x: absValues,
+              marker: {
+                color: absColors,
+                line: { color: "rgba(10, 39, 64, 0.45)", width: 1 },
+              },
+              customdata: absCustom,
+              hovertemplate:
+                "<b>%{y}</b><br>" +
+                `Novos alunos ${firstYear}: %{customdata[0]}<br>` +
+                `Novos alunos ${lastYear}: %{customdata[1]}<br>` +
+                "Variação absoluta: %{x}<br>" +
+                "Variação percentual: %{customdata[2]}<extra></extra>",
+            };
+
+            const layoutAbs = {
+              title: {
+                text: `Variação absoluta de novos alunos por área (${firstYear} → ${lastYear})`,
+                x: 0.5,
+                xanchor: "center",
+              },
+              height: dynamicAbsHeight,
+              margin: { t: 70, r: 20, b: 45, l: 260 },
+              paper_bgcolor: "rgba(0,0,0,0)",
+              plot_bgcolor: "rgba(255,255,255,0.6)",
+              xaxis: {
+                title: "Variação absoluta (novos alunos)",
+                zeroline: true,
+                zerolinewidth: 1.5,
+                zerolinecolor: "rgba(10,39,64,0.5)",
+              },
+              yaxis: {
+                automargin: true,
+                autorange: "reversed",
+                tickfont: { size: 10 },
+              },
+              showlegend: false,
+            };
+
+            Plotly.newPlot(chartAbsDiv, [traceAbs], layoutAbs, {
+              responsive: true,
+              displayModeBar: true,
+              modeBarButtonsToRemove: ["lasso2d", "select2d"],
+            });
+
+            const growthRowsPct = growthRows
+              .filter((row) => row.deltaPct !== null && Number.isFinite(row.deltaPct))
+              .sort((a, b) => {
+                if (b.deltaPct !== a.deltaPct) {
+                  return b.deltaPct - a.deltaPct;
+                }
+                return a.label.localeCompare(b.label, "pt-BR");
+              });
+
+            if (!growthRowsPct.length) {
+              showError(chartPctDiv, "Não há dados suficientes para calcular variação percentual.");
+            } else {
+              const dynamicPctHeight = Math.max(760, 180 + growthRowsPct.length * 22);
+              const pctLabels = growthRowsPct.map((row) => row.label);
+              const pctValues = growthRowsPct.map((row) => row.deltaPct);
+              const pctColors = growthRowsPct.map((row) =>
+                row.code === "45" ? "rgba(242, 140, 40, 0.95)" : "rgba(10, 98, 148, 0.78)"
+              );
+              const pctCustom = growthRowsPct.map((row) => [row.start, row.end, row.delta]);
+
+              const tracePct = {
+                type: "bar",
+                orientation: "h",
+                y: pctLabels,
+                x: pctValues,
+                marker: {
+                  color: pctColors,
+                  line: { color: "rgba(10, 39, 64, 0.45)", width: 1 },
+                },
+                customdata: pctCustom,
+                hovertemplate:
+                  "<b>%{y}</b><br>" +
+                  `Novos alunos ${firstYear}: %{customdata[0]}<br>` +
+                  `Novos alunos ${lastYear}: %{customdata[1]}<br>` +
+                  "Variação absoluta: %{customdata[2]}<br>" +
+                  "Variação percentual: %{x:.2f}%<extra></extra>",
+              };
+
+              const layoutPct = {
+                title: {
+                  text: `Variação percentual de novos alunos por área (${firstYear} → ${lastYear})`,
+                  x: 0.5,
+                  xanchor: "center",
+                },
+                height: dynamicPctHeight,
+                margin: { t: 70, r: 20, b: 45, l: 260 },
+                paper_bgcolor: "rgba(0,0,0,0)",
+                plot_bgcolor: "rgba(255,255,255,0.6)",
+                xaxis: {
+                  title: "Variação percentual (novos alunos)",
+                  ticksuffix: "%",
+                  zeroline: true,
+                  zerolinewidth: 1.5,
+                  zerolinecolor: "rgba(10,39,64,0.5)",
+                },
+                yaxis: {
+                  automargin: true,
+                  autorange: "reversed",
+                  tickfont: { size: 10 },
+                },
+                showlegend: false,
+              };
+
+              Plotly.newPlot(chartPctDiv, [tracePct], layoutPct, {
+                responsive: true,
+                displayModeBar: true,
+                modeBarButtonsToRemove: ["lasso2d", "select2d"],
+              });
+            }
+          })
+          .catch((err) => {
+            const message = err && err.message ? err.message : "Erro ao gerar gráficos.";
+            setResumo(`Falha no carregamento dos dados: ${message}`);
+            showError(chartSerieDiv, message);
+            showError(chartAbsDiv, message);
+            showError(chartPctDiv, message);
+          });
+      })();
+    </script>
+  </body>
+</html>

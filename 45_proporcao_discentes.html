@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Área 45 - Proporção de Docentes</title>
+  <title>Área 45 - Proporção de Discentes</title>
   <link rel="icon" type="image/svg+xml" href="./Images/favicon.svg" />
   <link rel="stylesheet" href="./CSS/site.css" />
   <style>
@@ -113,7 +113,7 @@
     <p class="page-home-link"><a href="./45_artigo.html">Voltar para a lista de relatórios</a></p>
 
     <header class="page-header">
-      <h1>Qual a proporção de docentes da Área 45 em relação a todas as outras áreas?</h1>
+      <h1>Qual a proporção de discentes da Área 45 em relação a todas as outras áreas?</h1>
     </header>
 
     <main class="page-content">
@@ -121,41 +121,41 @@
         <h2 class="panel-title">Quantidade em 2024</h2>
         <div class="section-card">
           <h3 class="section-title">Sobre</h3>
-          <p>Vamos usar a planilha mais recente (<tt>br-capes-colsucup-docente-2024-2025-12-01.xlsx</tt>)
-            do <a href="https://dadosabertos.capes.gov.br/">Portal de Dados Abertos da CAPES</a>,
-          filtrar somente registros com <tt>AN_BASE = 2024</tt> e <tt>CD_PROGRAMA_IES</tt> presente na tabela de filtro
-          <tt>Data/programas_ativos_2024_filtro.csv</tt> (programas com <tt>DS_SITUACAO_PROGRAMA = EM FUNCIONAMENTO</tt>),
-          agregar por <tt>CD_AREA_AVALIACAO</tt> e contar docentes distintos por <tt>ID_PESSOA</tt> para montar o histograma.
-          Também calculamos a razão <tt>docentes/programas</tt> por área, dividindo a contagem de docentes pelo número de programas ativos em cada área.</p>
-          <h3 class="section-title">Número de docentes por área</h3>
+          <p>Usamos agregados já pré-processados da base 2024 de discentes:
+            <tt>Data/discentes_2024_contagem_por_area_nome.csv</tt> para contagem por área,
+            <tt>Data/discentes_2024_area51_programa_contagem.csv</tt> para programas da Área 51
+            e <tt>Data/discentes_2024_uf_area_contagem.csv</tt> para distribuição por UF e área.
+            Também calculamos a razão <tt>discentes/programas</tt> por área, dividindo a contagem de discentes pelo número
+            de programas ativos em cada área.</p>
+          <h3 class="section-title">Número de discentes por área</h3>
           <div class="chart-box">
             <div id="chart-area-contagem"></div>
             <p class="chart-note">
-              Histograma por área (X = nome abreviado da área, Y = contagem de docentes). A barra da
+              Histograma por área (X = nome abreviado da área, Y = contagem de discentes). A barra da
               Área 45 está destacada em laranja.
             </p>
           </div>
-          <h3 class="section-title">Docentes por Programa (razão por área)</h3>
+          <h3 class="section-title">Discentes por Programa (razão por área)</h3>
           <div class="chart-box">
-            <div id="chart-area-docentes-por-programa"></div>
+            <div id="chart-area-discentes-por-programa"></div>
             <p class="chart-note">
-              Histograma por área (X = nome abreviado da área, Y = <tt>docentes/programas</tt>).
-              Cálculo: docentes distintos da área / programas ativos da área.
+              Histograma por área (X = nome abreviado da área, Y = <tt>discentes/programas</tt>).
+              Cálculo: discentes distintos da área / programas ativos da área.
             </p>
           </div>
-          <h3 class="section-title">Programas da Área 51 e número de docentes</h3>
+          <h3 class="section-title">Programas da Área 51 e número de discentes</h3>
           <div class="chart-box">
             <div id="table-area51-programas"></div>
             <p class="chart-note">
-              Contagem de docentes distintos por programa da Área 51 (base 2024, somente programas ativos).
+              Contagem de discentes distintos por programa da Área 51 (base 2024, somente programas ativos).
             </p>
           </div>
-          <h3 class="section-title">Docentes por Programa (escala log)</h3>
+          <h3 class="section-title">Discentes por Programa (escala log)</h3>
           <div class="chart-box">
-            <div id="chart-area-docentes-por-programa-log"></div>
+            <div id="chart-area-discentes-por-programa-log"></div>
             <p class="chart-note">
               Versão em escala logarítmica (<tt>log10</tt>) do histograma de
-              <tt>docentes/programas</tt>, para facilitar comparação entre áreas.
+              <tt>discentes/programas</tt>, para facilitar comparação entre áreas.
             </p>
           </div>
         </div>
@@ -165,16 +165,15 @@
         <h2 class="panel-title">Distribuição por UF</h2>
         <div class="section-card">
           <h3 class="section-title">Sobre</h3>
-          <p>Com a mesma base da seção anterior (<tt>AN_BASE = 2024</tt> e somente programas ativos via
-            <tt>Data/programas_ativos_2024_filtro.csv</tt>),
-            agregamos por <tt>SG_UF_PROGRAMA</tt> para obter, em cada UF, o total de docentes distintos (<tt>ID_PESSOA</tt>) e
+          <p>Com o agregado <tt>Data/discentes_2024_uf_area_contagem.csv</tt>,
+            somamos por <tt>SG_UF_PROGRAMA</tt> para obter, em cada UF, o total de discentes e
             quantos são da Área 45 (<tt>CD_AREA_AVALIACAO = 45</tt>).
             A proporção é <tt>area45_uf / total_uf</tt>.</p>
           <h3 class="section-title">Proporção da Área 45 por UF (Marimekko)</h3>
           <div class="chart-box">
             <div id="chart-uf-proporcao"></div>
             <p class="chart-note">
-              Marimekko por UF: largura da barra = participação da UF no total de docentes; altura empilhada = 100%
+              Marimekko por UF: largura da barra = participação da UF no total de discentes; altura empilhada = 100%
               (Área 45 vs demais áreas).
             </p>
           </div>
@@ -183,7 +182,7 @@
           <div class="chart-box">
             <div id="chart-uf-choropleth"></div>
             <p class="chart-note">
-              Mapa cloroplético por UF com a proporção de docentes da Área 45 no total de docentes em cada estado.
+              Mapa cloroplético por UF com a proporção de discentes da Área 45 no total de discentes em cada estado.
               Escala fixa: <tt>0% = branco</tt>, <tt>10% = azul</tt>, <tt>20% = laranja</tt>, com topo em
               <tt>30%</tt>.
             </p>
@@ -198,33 +197,33 @@
           <p>
             Agora comparamos a Área 45 em uma estrutura hierárquica da CAPES
             (<tt>Colégio</tt> e <tt>Grande Área</tt>). Usamos a mesma base de
-            docentes de 2024, com classificação do arquivo
+            discentes de 2024, com classificação do arquivo
             <tt>Colegios e Grandes Areas.xlsx</tt>.
           </p>
           <h3 class="section-title">Comparação na Grande Área Multidisciplinar</h3>
           <div class="chart-box">
             <div id="chart-grande-area-45"></div>
             <p class="chart-note">
-              Docentes da Grande Área Multidisciplinar. A fatia da Área 45 está em laranja.
+              Discentes da Grande Área Multidisciplinar. A fatia da Área 45 está em laranja.
             </p>
           </div>
           <h3 class="section-title">Comparação no Colégio Ciências Exatas, Tecnológicas e Multidisciplinar</h3>
           <div class="chart-box">
             <div id="chart-colegio-45"></div>
             <p class="chart-note">
-              Docentes do Colégio Ciências Exatas, Tecnológicas e Multidisciplinar. Cores:
+              Discentes do Colégio Ciências Exatas, Tecnológicas e Multidisciplinar. Cores:
               <tt>laranja = Área 45</tt>, <tt>azul médio = mesma grande área</tt>,
               <tt>azul claro = outras grandes áreas do colégio</tt>.
             </p>
           </div>
-          <p>Podemos também ter uma visão geral da proporção (representada pela área) dos docentes da área
+          <p>Podemos também ter uma visão geral da proporção (representada pela área) dos discentes da área
             Interdisciplinar com todos os outros da CAPES, agrupados por Colégio e Grande Área.
           </p>
           <h3 class="section-title">Distribuição Geral por Colégio e Grande Área</h3>
           <div class="chart-box">
             <div id="chart-mondrian-colegios"></div>
             <p class="chart-note">
-              Mondrian (treemap) com todos os docentes em 2024, organizado por
+              Mondrian (treemap) com todos os discentes em 2024, organizado por
               <tt>Colégio → Grande Área → Área</tt>.
             </p>
           </div>
@@ -236,18 +235,19 @@
   <script src="./JS/plotly.min.js"></script>
   <script>
     (function () {
-      const contagemCsvUrl = "./Data/docentes_2024_contagem_por_area_nome.csv";
+      const contagemCsvUrl = "./Data/discentes_2024_contagem_por_area_nome.csv";
       const contagemProgramasCsvUrl = "./Data/programas_ativos_2024_contagem_por_area_nome.csv";
       const programasAtivosFiltroCsvUrl = "./Data/programas_ativos_2024_filtro.csv";
       const abreviacoesCsvUrl = "./Data/areas_avaliacao_abreviacoes.csv";
-      const docentesCsvUrl = "./Data/docentes_2024_campos_analise_area45.csv";
+      const ufAreaCsvUrl = "./Data/discentes_2024_uf_area_contagem.csv";
+      const area51ProgramasCsvUrl = "./Data/discentes_2024_area51_programa_contagem.csv";
       const comparativoHierarquiaCsvUrl =
-        "./Data/docentes_2024_comparativo_area45_grande_area_colegio.csv";
+        "./Data/discentes_2024_comparativo_area45_grande_area_colegio.csv";
       const brStatesGeoJsonUrl = "./JS/br_states.json";
       const chartDiv = document.getElementById("chart-area-contagem");
-      const chartDocentesPorProgramaDiv = document.getElementById("chart-area-docentes-por-programa");
+      const chartDiscentesPorProgramaDiv = document.getElementById("chart-area-discentes-por-programa");
       const tableArea51ProgramasDiv = document.getElementById("table-area51-programas");
-      const chartDocentesPorProgramaLogDiv = document.getElementById("chart-area-docentes-por-programa-log");
+      const chartDiscentesPorProgramaLogDiv = document.getElementById("chart-area-discentes-por-programa-log");
       const chartUfDiv = document.getElementById("chart-uf-proporcao");
       const chartUfMapDiv = document.getElementById("chart-uf-choropleth");
       const chartGrandeAreaDiv = document.getElementById("chart-grande-area-45");
@@ -362,9 +362,9 @@
 
       if (typeof Plotly === "undefined") {
         showError(chartDiv, "Plotly não foi carregado.");
-        showError(chartDocentesPorProgramaDiv, "Plotly não foi carregado.");
+        showError(chartDiscentesPorProgramaDiv, "Plotly não foi carregado.");
         showError(tableArea51ProgramasDiv, "Plotly não foi carregado.");
-        showError(chartDocentesPorProgramaLogDiv, "Plotly não foi carregado.");
+        showError(chartDiscentesPorProgramaLogDiv, "Plotly não foi carregado.");
         showError(chartUfDiv, "Plotly não foi carregado.");
         showError(chartUfMapDiv, "Plotly não foi carregado.");
         showError(chartGrandeAreaDiv, "Plotly não foi carregado.");
@@ -398,7 +398,7 @@
                 code,
                 area,
                 areaAbreviada,
-                y: Number(row.CONTAGEM_DOCENTES || 0),
+                y: Number(row.CONTAGEM_DISCENTES || 0),
               };
             })
             .filter((row) => row.area && Number.isFinite(row.y) && row.y > 0)
@@ -429,12 +429,12 @@
             },
             customdata: customData,
             hovertemplate:
-              "<b>%{customdata[1]}</b> (Área %{customdata[0]})<br>Rótulo: %{x}<br>Docentes distintos: %{y}<extra></extra>",
+              "<b>%{customdata[1]}</b> (Área %{customdata[0]})<br>Rótulo: %{x}<br>Discentes distintos: %{y}<extra></extra>",
           };
 
           const layout = {
             title: {
-              text: "Docentes por área de avaliação (2024)",
+              text: "Discentes por área de avaliação (2024)",
               x: 0.5,
               xanchor: "center",
             },
@@ -486,8 +486,8 @@
 
           if (!ratioRows.length) {
             showError(
-              chartDocentesPorProgramaDiv,
-              "Sem dados para o histograma de docentes por programa."
+              chartDiscentesPorProgramaDiv,
+              "Sem dados para o histograma de discentes por programa."
             );
             return;
           }
@@ -510,14 +510,14 @@
             customdata: ratioRows.map((r) => [r.code, r.area, r.y, r.programas]),
             hovertemplate:
               "<b>%{customdata[1]}</b> (Área %{customdata[0]})<br>" +
-              "Docentes: %{customdata[2]}<br>" +
+              "Discentes: %{customdata[2]}<br>" +
               "Programas: %{customdata[3]}<br>" +
-              "Docentes por programa: %{y:.2f}<extra></extra>",
+              "Discentes por programa: %{y:.2f}<extra></extra>",
           };
 
           const ratioLayout = {
             title: {
-              text: "Docentes por programa por área de avaliação (2024)",
+              text: "Discentes por programa por área de avaliação (2024)",
               x: 0.5,
               xanchor: "center",
             },
@@ -530,13 +530,13 @@
               automargin: true,
             },
             yaxis: {
-              title: "Docentes / programa",
+              title: "Discentes / programa",
               rangemode: "tozero",
             },
             showlegend: false,
           };
 
-          Plotly.newPlot(chartDocentesPorProgramaDiv, [ratioTrace], ratioLayout, {
+          Plotly.newPlot(chartDiscentesPorProgramaDiv, [ratioTrace], ratioLayout, {
             responsive: true,
             displayModeBar: true,
             modeBarButtonsToRemove: ["lasso2d", "select2d"],
@@ -544,7 +544,7 @@
 
           const ratioLogLayout = {
             title: {
-              text: "Docentes por programa por área de avaliação (2024) - escala log",
+              text: "Discentes por programa por área de avaliação (2024) - escala log",
               x: 0.5,
               xanchor: "center",
             },
@@ -557,14 +557,14 @@
               automargin: true,
             },
             yaxis: {
-              title: "Docentes / programa (log10)",
+              title: "Discentes / programa (log10)",
               type: "log",
               rangemode: "tozero",
             },
             showlegend: false,
           };
 
-          Plotly.newPlot(chartDocentesPorProgramaLogDiv, [ratioTrace], ratioLogLayout, {
+          Plotly.newPlot(chartDiscentesPorProgramaLogDiv, [ratioTrace], ratioLogLayout, {
             responsive: true,
             displayModeBar: true,
             modeBarButtonsToRemove: ["lasso2d", "select2d"],
@@ -573,17 +573,18 @@
         .catch((err) => {
           showError(chartDiv, err && err.message ? err.message : "Erro ao gerar histograma.");
           showError(
-            chartDocentesPorProgramaDiv,
-            err && err.message ? err.message : "Erro ao gerar histograma de docentes por programa."
+            chartDiscentesPorProgramaDiv,
+            err && err.message ? err.message : "Erro ao gerar histograma de discentes por programa."
           );
           showError(
-            chartDocentesPorProgramaLogDiv,
-            err && err.message ? err.message : "Erro ao gerar histograma de docentes por programa em escala log."
+            chartDiscentesPorProgramaLogDiv,
+            err && err.message ? err.message : "Erro ao gerar histograma de discentes por programa em escala log."
           );
         });
 
       Promise.all([
-        fetchCsvText(docentesCsvUrl),
+        fetchCsvText(ufAreaCsvUrl),
+        fetchCsvText(area51ProgramasCsvUrl),
         fetchCsvText(programasAtivosFiltroCsvUrl),
         fetch(brStatesGeoJsonUrl).then((resp) => {
           if (!resp.ok) {
@@ -592,22 +593,14 @@
           return resp.json();
         }),
       ])
-        .then(([csvText, programasFiltroCsvText, geojson]) => {
-          const rows = parseCsv(csvText)
+        .then(([ufAreaCsvText, area51ProgramasCsvText, programasFiltroCsvText, geojson]) => {
+          const ufAreaRows = parseCsv(ufAreaCsvText)
             .map((row) => ({
               uf: String(row.SG_UF_PROGRAMA || "").trim().toUpperCase(),
               areaCode: String(row.CD_AREA_AVALIACAO || "").trim(),
-              docenteId: String(row.ID_PESSOA || "").trim(),
-              programaCode: String(row.CD_PROGRAMA_IES || "").trim(),
-              programaNome: String(row.NM_PROGRAMA_IES || "").trim(),
+              count: Number(row.CONTAGEM_DISCENTES || 0),
             }))
-            .filter((row) => row.uf && row.areaCode && row.docenteId);
-
-          if (!rows.length) {
-            showError(chartUfDiv, "CSV sem dados para o marimekko por UF.");
-            showError(tableArea51ProgramasDiv, "CSV sem dados para a tabela da Área 51.");
-            return;
-          }
+            .filter((row) => row.uf && row.areaCode && Number.isFinite(row.count) && row.count > 0);
 
           const redeByProgramCode = {};
           parseCsv(programasFiltroCsvText).forEach((row) => {
@@ -618,44 +611,31 @@
             }
           });
 
-          const area51ByProgram = {};
-          rows
-            .filter((row) => row.areaCode === "51")
-            .forEach((row) => {
-              const key = row.programaCode || `${row.programaNome}::${row.uf}`;
-              if (!area51ByProgram[key]) {
-                area51ByProgram[key] = {
-                  programaCode: row.programaCode,
-                  programaNome: row.programaNome || "Programa sem nome",
-                  uf: row.uf || "",
-                  inRede:
-                    row.programaCode && redeByProgramCode[row.programaCode]
-                      ? redeByProgramCode[row.programaCode]
-                      : "",
-                  docentes: new Set(),
-                };
-              }
-              area51ByProgram[key].docentes.add(row.docenteId);
-            });
-
-          const area51TableRows = Object.values(area51ByProgram)
-            .map((item) => ({
-              programaCode: item.programaCode,
-              programaNome: item.programaNome,
-              uf: item.uf,
-              inRede: item.inRede,
-              docentes: item.docentes.size,
+          const area51TableRows = parseCsv(area51ProgramasCsvText)
+            .map((row) => ({
+              programaCode: String(row.CD_PROGRAMA_IES || "").trim(),
+              programaNome: String(row.NM_PROGRAMA_IES || "").trim() || "Programa sem nome",
+              uf: String(row.SG_UF_PROGRAMA || "").trim(),
+              discentes: Number(row.CONTAGEM_DISCENTES || 0),
+            }))
+            .filter((row) => Number.isFinite(row.discentes) && row.discentes > 0)
+            .map((row) => ({
+              ...row,
+              inRede:
+                row.programaCode && redeByProgramCode[row.programaCode]
+                  ? redeByProgramCode[row.programaCode]
+                  : "",
             }))
             .sort(
               (a, b) =>
-                b.docentes - a.docentes ||
+                b.discentes - a.discentes ||
                 a.programaNome.localeCompare(b.programaNome, "pt-BR")
             );
 
           if (!area51TableRows.length) {
             showError(
               tableArea51ProgramasDiv,
-              "Sem dados de programas da Área 51 na base atual."
+              "Sem dados de programas da Área 51 na base agregada."
             );
           } else {
             const tableRowsHtml = area51TableRows
@@ -667,7 +647,7 @@
                     <td>${escapeHtml(row.uf)}</td>
                     <td>${escapeHtml(row.programaCode)}</td>
                     <td>${escapeHtml(row.inRede || "-")}</td>
-                    <td class="num">${row.docentes}</td>
+                    <td class="num">${row.discentes}</td>
                   </tr>
                 `
               )
@@ -683,7 +663,7 @@
                       <th>UF</th>
                       <th>CD_PROGRAMA_IES</th>
                       <th>Em rede?</th>
-                      <th>Docentes distintos</th>
+                      <th>Discentes distintos</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -694,25 +674,31 @@
             `;
           }
 
+          if (!ufAreaRows.length) {
+            showError(chartUfDiv, "CSV sem dados para o marimekko por UF.");
+            showError(chartUfMapDiv, "CSV sem dados para o mapa cloroplético por UF.");
+            return;
+          }
+
           const countsByUf = {};
-          rows.forEach((row) => {
+          ufAreaRows.forEach((row) => {
             if (!countsByUf[row.uf]) {
               countsByUf[row.uf] = {
-                totalDocentes: new Set(),
-                area45Docentes: new Set(),
+                totalDiscentes: 0,
+                area45Discentes: 0,
               };
             }
-            countsByUf[row.uf].totalDocentes.add(row.docenteId);
+            countsByUf[row.uf].totalDiscentes += row.count;
             if (row.areaCode === "45") {
-              countsByUf[row.uf].area45Docentes.add(row.docenteId);
+              countsByUf[row.uf].area45Discentes += row.count;
             }
           });
 
           const mekkoRows = Object.keys(countsByUf)
             .map((uf) => ({
               uf,
-              total: countsByUf[uf].totalDocentes.size,
-              area45: countsByUf[uf].area45Docentes.size,
+              total: countsByUf[uf].totalDiscentes,
+              area45: countsByUf[uf].area45Discentes,
             }))
             .filter((row) => row.total > 0)
             .sort((a, b) => b.total - a.total || a.uf.localeCompare(b.uf, "pt-BR"));
@@ -760,7 +746,7 @@
             },
             customdata: mekkoCustom,
             hovertemplate:
-              "<b>UF %{customdata[0]}</b><br>Área 45: %{customdata[1]} docentes de %{customdata[3]} (%{y:.1f}%)<br>Peso da UF no total: %{customdata[4]:.1f}%<extra></extra>",
+              "<b>UF %{customdata[0]}</b><br>Área 45: %{customdata[1]} discentes de %{customdata[3]} (%{y:.1f}%)<br>Peso da UF no total: %{customdata[4]:.1f}%<extra></extra>",
           };
 
           const mekkoTraceResto = {
@@ -775,12 +761,12 @@
             },
             customdata: mekkoCustom,
             hovertemplate:
-              "<b>UF %{customdata[0]}</b><br>Demais áreas: %{customdata[2]} docentes de %{customdata[3]} (%{y:.1f}%)<br>Peso da UF no total: %{customdata[4]:.1f}%<extra></extra>",
+              "<b>UF %{customdata[0]}</b><br>Demais áreas: %{customdata[2]} discentes de %{customdata[3]} (%{y:.1f}%)<br>Peso da UF no total: %{customdata[4]:.1f}%<extra></extra>",
           };
 
           const mekkoLayout = {
             title: {
-              text: "Proporção da Área 45 por UF e Número de Docentes em cada UF (2024)",
+              text: "Proporção da Área 45 por UF e Número de Discentes em cada UF (2024)",
               x: 0.5,
               xanchor: "center",
               pad: { b: 18 },
@@ -791,7 +777,7 @@
             barmode: "stack",
             bargap: 0,
             xaxis: {
-              title: "Participação da UF no total de docentes",
+              title: "Participação da UF no total de discentes",
               range: [0, 100],
               ticksuffix: "%",
               tickvals: mekkoX,
@@ -832,8 +818,8 @@
             const rawId = getFeatureRawValue(feature, selectedKey.key);
             const uf = normalizeUf(rawId);
             const counts = countsByUf[uf];
-            const totalUf = counts ? counts.totalDocentes.size : 0;
-            const area45Uf = counts ? counts.area45Docentes.size : 0;
+            const totalUf = counts ? counts.totalDiscentes : 0;
+            const area45Uf = counts ? counts.area45Discentes : 0;
             if (!counts || totalUf <= 0) {
               return;
             }
@@ -883,7 +869,7 @@
 
           const mapLayout = {
             title: {
-              text: "Mapa cloroplético: proporção de docentes da Área 45 por UF (2024)",
+              text: "Mapa cloroplético: proporção de discentes da Área 45 por UF (2024)",
               x: 0.5,
               xanchor: "center",
               pad: { b: 16 },
@@ -917,6 +903,10 @@
             chartUfMapDiv,
             err && err.message ? err.message : "Erro ao gerar mapa cloroplético por UF."
           );
+          showError(
+            tableArea51ProgramasDiv,
+            err && err.message ? err.message : "Erro ao gerar tabela da Área 51."
+          );
         });
 
       fetchCsvText(comparativoHierarquiaCsvUrl)
@@ -928,7 +918,7 @@
               areaAbreviada: String(row.NM_AREA_AVALIACAO_ABREVIADA || "").trim(),
               grandeArea: String(row.GRANDE_AREA_CAPES_SITE || "").trim(),
               colegio: String(row.COLEGIO_CAPES_SITE || "").trim(),
-              count: Number(row.CONTAGEM_DOCENTES_2024 || 0),
+              count: Number(row.CONTAGEM_DISCENTES_2024 || 0),
               is45: String(row.IS_AREA_45 || "").trim() === "1",
               sameGrande45:
                 String(row.MESMA_GRANDE_AREA_AREA45 || "").trim() === "1",
@@ -1017,14 +1007,14 @@
               insidetextorientation: "radial",
               hovertemplate:
                 "<b>%{hovertext}</b><br>" +
-                "Docentes: %{value}<br>" +
+                "Discentes: %{value}<br>" +
                 "Participação: %{percent}<extra></extra>",
             };
 
             const layoutGrande = {
               title: {
                 text:
-                  `Proporção do Número de Docentes na Grande Área ${area45.grandeArea} (2024)` +
+                  `Proporção do Número de Discentes na Grande Área ${area45.grandeArea} (2024)` +
                   `<br><sup>Área 45: ${area45Grande ? area45Grande.count : 0} de ${totalGrande} (${shareGrande.toFixed(1)}%)</sup>`,
                 x: 0.5,
                 xanchor: "center",
@@ -1094,13 +1084,13 @@
               insidetextorientation: "radial",
               hovertemplate:
                 "<b>%{hovertext}</b><br>" +
-                "Docentes: %{value}<br>" +
+                "Discentes: %{value}<br>" +
                 "Participação: %{percent}<extra></extra>",
             };
 
             const layoutColegio = {
               title: {
-                text: `Proporção do Número de Docentes no Colégio<br> ${area45.colegio} (2024)`,
+                text: `Proporção do Número de Discentes no Colégio<br> ${area45.colegio} (2024)`,
                 x: 0.5,
                 xanchor: "center",
               },
@@ -1172,7 +1162,7 @@
             });
 
             const ids = ["root"];
-            const labels = ["Todos os Docentes"];
+            const labels = ["Todos os Discentes"];
             const parents = [""];
             const values = [totalAll];
             const colors = ["rgba(230, 240, 250, 1)"];
@@ -1249,7 +1239,7 @@
 
             const layoutMondrian = {
               title: {
-                text: "Mondrian (Treemap): Docentes 2024 por Colégio, Grande Área e Área",
+                text: "Mondrian (Treemap): Discentes 2024 por Colégio, Grande Área e Área",
                 x: 0.5,
                 xanchor: "center",
               },

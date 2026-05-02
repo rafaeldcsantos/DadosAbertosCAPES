@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Área 45 - Quantos Programas Existem?</title>
+    <link rel="icon" type="image/svg+xml" href="./Images/favicon.svg" />
+    <link rel="stylesheet" href="./CSS/site.css" />
+    <style>
+      .section-card {
+        border: 1px solid rgba(13, 125, 189, 0.28);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 14px;
+      }
+
+      .section-title {
+        margin: 0 0 8px;
+        color: #08547f;
+        font-size: 1rem;
+      }
+
+      .section-card p,
+      .section-card ul,
+      .section-card ol {
+        margin: 0 0 10px;
+      }
+
+      .chart-box {
+        border: 1px dashed rgba(13, 125, 189, 0.4);
+        border-radius: 8px;
+        background: rgba(245, 249, 255, 0.9);
+        min-height: 280px;
+        padding: 10px;
+        margin-bottom: 10px;
+      }
+
+      :root {
+        --chart-max-width: 940px;
+      }
+
+      .chart-box [id^="chart-"] {
+        width: min(100%, var(--chart-max-width));
+        aspect-ratio: 4 / 3;
+        height: auto;
+        margin: 0 auto;
+      }
+
+      .chart-note {
+        margin-top: 8px;
+        font-size: 0.84rem;
+        color: rgba(10, 39, 64, 0.78);
+      }
+
+      .answer-pill {
+        margin: 0 0 12px;
+        border: 1px solid rgba(13, 125, 189, 0.35);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.96);
+        padding: 10px 12px;
+        color: rgba(10, 39, 64, 0.95);
+      }
+
+      .answer-pill strong {
+        color: #08547f;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page" id="page">
+      <p class="page-home-link"><a href="./45_artigo.html">Voltar para a lista de relatórios</a></p>
+
+      <header class="page-header">
+        <h1>Quantos programas da Área 45 existem?</h1>
+        <p>Comparação com outras áreas por histograma e gráfico de pizza (base 2024).</p>
+      </header>
+
+      <main class="page-content">
+        <section class="tiles-panel">
+          <h2 class="panel-title">Quantidade em 2024</h2>
+          <div class="section-card">
+            <p class="answer-pill" id="resumo-programas">Carregando dados...</p>
+
+            <h3 class="section-title">Como calcular</h3>
+            <p>
+              A base usada é <tt>Data/programas_ativos_2024_contagem_por_area_nome.csv</tt>,
+              que contém os programas em funcionamento agregados por área.
+              A Área 45 é identificada por <tt>CD_AREA_AVALIACAO = 45</tt>.
+            </p>
+
+            <h3 class="section-title">Número de programas por área (histograma)</h3>
+            <div class="chart-box">
+              <div id="chart-area-contagem"></div>
+              <p class="chart-note">
+                A barra da Área 45 aparece destacada em laranja para facilitar a comparação.
+              </p>
+            </div>
+
+            <h3 class="section-title">Participação por área (pizza)</h3>
+            <div class="chart-box">
+              <div id="chart-area-pizza"></div>
+              <p class="chart-note">
+                A pizza mostra o peso de cada área no total de programas em funcionamento.
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <footer class="site-footnote">
+      <a href="http://linktr.ee/rafaeldcsantos">Rafael Santos</a>
+    </footer>
+
+    <script src="./JS/plotly.min.js"></script>
+    <script>
+      (function () {
+        const contagemCsvUrl = "./Data/programas_ativos_2024_contagem_por_area_nome.csv";
+        const abreviacoesCsvUrl = "./Data/areas_avaliacao_abreviacoes.csv";
+        const chartBarDiv = document.getElementById("chart-area-contagem");
+        const chartPieDiv = document.getElementById("chart-area-pizza");
+        const resumoProgramasEl = document.getElementById("resumo-programas");
+
+        function parseCsvLine(line) {
+          const out = [];
+          let current = "";
+          let inQuotes = false;
+
+          for (let i = 0; i < line.length; i += 1) {
+            const ch = line[i];
+            if (ch === '"') {
+              if (inQuotes && line[i + 1] === '"') {
+                current += '"';
+                i += 1;
+              } else {
+                inQuotes = !inQuotes;
+              }
+              continue;
+            }
+            if (ch === "," && !inQuotes) {
+              out.push(current);
+              current = "";
+              continue;
+            }
+            current += ch;
+          }
+          out.push(current);
+          return out;
+        }
+
+        function parseCsv(text) {
+          const lines = String(text || "")
+            .split(/\r?\n/)
+            .filter((line) => line.trim().length > 0);
+          if (lines.length < 2) {
+            return [];
+          }
+
+          const headers = parseCsvLine(lines[0]).map((h) => h.trim());
+          return lines.slice(1).map((line) => {
+            const cols = parseCsvLine(line);
+            const row = {};
+            headers.forEach((header, idx) => {
+              row[header] = (cols[idx] || "").trim();
+            });
+            return row;
+          });
+        }
+
+        function showError(target, message) {
+          if (!target) {
+            return;
+          }
+          target.innerHTML = `<p>${message}</p>`;
+        }
+
+        function setResumo(message) {
+          if (resumoProgramasEl) {
+            resumoProgramasEl.innerHTML = message;
+          }
+        }
+
+        function fetchCsvText(url) {
+          return fetch(url).then((resp) => {
+            if (!resp.ok) {
+              throw new Error(`Falha ao carregar CSV: HTTP ${resp.status} (${url})`);
+            }
+            return resp.text();
+          });
+        }
+
+        if (typeof Plotly === "undefined") {
+          setResumo("Falha: biblioteca Plotly não carregada.");
+          showError(chartBarDiv, "Plotly não foi carregado.");
+          showError(chartPieDiv, "Plotly não foi carregado.");
+          return;
+        }
+
+        Promise.all([fetchCsvText(contagemCsvUrl), fetchCsvText(abreviacoesCsvUrl)])
+          .then(([contagemCsvText, abreviacoesCsvText]) => {
+            const abreviacoesPorCodigo = {};
+            parseCsv(abreviacoesCsvText).forEach((row) => {
+              const codigo = String(row.CD_AREA_AVALIACAO || "").trim();
+              const abreviado = String(row.NM_AREA_AVALIACAO_ABREVIADA || "").trim();
+              const nome = String(row.NM_AREA_AVALIACAO || "").trim();
+              if (codigo) {
+                abreviacoesPorCodigo[codigo] = abreviado || nome;
+              }
+            });
+
+            const rows = parseCsv(contagemCsvText)
+              .map((row) => {
+                const code = String(row.CD_AREA_AVALIACAO || "").trim();
+                const area = String(row.NM_AREA_AVALIACAO || "").trim();
+                const areaAbreviada = abreviacoesPorCodigo[code] || area;
+                return {
+                  code,
+                  area,
+                  areaAbreviada,
+                  y: Number(row.CONTAGEM_PROGRAMAS || 0),
+                };
+              })
+              .filter((row) => row.area && Number.isFinite(row.y) && row.y > 0)
+              .sort((a, b) => b.y - a.y);
+
+            if (!rows.length) {
+              setResumo("Não há dados disponíveis para esta pergunta.");
+              showError(chartBarDiv, "CSV sem dados para o histograma.");
+              showError(chartPieDiv, "CSV sem dados para o gráfico de pizza.");
+              return;
+            }
+
+            const totalProgramas = rows.reduce((acc, row) => acc + row.y, 0);
+            const area45Row = rows.find((row) => row.code === "45");
+            const area45Count = area45Row ? area45Row.y : 0;
+            const shareArea45 = totalProgramas > 0 ? (area45Count / totalProgramas) * 100 : 0;
+            const area45Ranking = area45Row ? rows.findIndex((row) => row.code === "45") + 1 : null;
+
+            setResumo(
+              `<strong>Área 45 (Interdisciplinar): ${area45Count}</strong> programas em funcionamento ` +
+                `de um total de <strong>${totalProgramas}</strong> ` +
+                `(${shareArea45.toFixed(1)}% do total).` +
+                (area45Ranking ? ` Posição no ranking: <strong>${area45Ranking}ª</strong>.` : "")
+            );
+
+            const x = rows.map((r) => r.areaAbreviada);
+            const y = rows.map((r) => r.y);
+            const customData = rows.map((r) => [r.code, r.area]);
+            const barColors = rows.map((r) =>
+              r.code === "45" ? "rgba(242, 140, 40, 0.95)" : "rgba(10, 98, 148, 0.82)"
+            );
+            const barLineColors = rows.map((r) =>
+              r.code === "45" ? "rgba(165, 86, 18, 1)" : "rgba(10, 39, 64, 0.55)"
+            );
+
+            const traceBar = {
+              type: "bar",
+              x,
+              y,
+              marker: {
+                color: barColors,
+                line: { color: barLineColors, width: 1 },
+              },
+              customdata: customData,
+              hovertemplate:
+                "<b>%{customdata[1]}</b> (Área %{customdata[0]})<br>" +
+                "Rótulo: %{x}<br>Programas em funcionamento: %{y}<extra></extra>",
+            };
+
+            const layoutBar = {
+              title: {
+                text: "Programas em funcionamento por área de avaliação (2024)",
+                x: 0.5,
+                xanchor: "center",
+              },
+              margin: { t: 70, r: 12, b: 220, l: 70 },
+              paper_bgcolor: "rgba(0,0,0,0)",
+              plot_bgcolor: "rgba(255,255,255,0.6)",
+              xaxis: {
+                title: "Área (nome abreviado)",
+                tickangle: -45,
+                automargin: true,
+              },
+              yaxis: {
+                title: "Contagem",
+                rangemode: "tozero",
+              },
+              showlegend: false,
+            };
+
+            Plotly.newPlot(chartBarDiv, [traceBar], layoutBar, {
+              responsive: true,
+              displayModeBar: true,
+              modeBarButtonsToRemove: ["lasso2d", "select2d"],
+            });
+
+            const labelsPie = rows.map((row) =>
+              row.areaAbreviada
+                ? `${row.areaAbreviada} (${row.code})`
+                : `${row.area} (${row.code})`
+            );
+            const valuesPie = rows.map((row) => row.y);
+            const hoverPie = rows.map((row) => `${row.area} (Área ${row.code})`);
+            const palettePie = [
+              "#9ecae1",
+              "#6baed6",
+              "#4292c6",
+              "#3182bd",
+              "#2171b5",
+              "#08519c",
+              "#08306b",
+            ];
+            const colorsPie = rows.map((row, idx) => {
+              if (row.code === "45") {
+                return "rgba(242, 140, 40, 0.95)";
+              }
+              return palettePie[idx % palettePie.length];
+            });
+
+            const tracePie = {
+              type: "pie",
+              labels: labelsPie,
+              values: valuesPie,
+              hole: 0.38,
+              sort: false,
+              direction: "clockwise",
+              marker: {
+                colors: colorsPie,
+                line: { color: "rgba(255,255,255,0.9)", width: 1 },
+              },
+              hovertext: hoverPie,
+              textinfo: "none",
+              hovertemplate:
+                "<b>%{hovertext}</b><br>" +
+                "Programas: %{value}<br>" +
+                "Participação: %{percent}<extra></extra>",
+            };
+
+            const layoutPie = {
+              title: {
+                text:
+                  "Participação do número de programas por área (2024)" +
+                  `<br><sup>Área 45: ${area45Count} de ${totalProgramas} (${shareArea45.toFixed(1)}%)</sup>`,
+                x: 0.5,
+                xanchor: "center",
+              },
+              margin: { t: 90, r: 14, b: 20, l: 14 },
+              paper_bgcolor: "rgba(0,0,0,0)",
+              plot_bgcolor: "rgba(255,255,255,0.6)",
+              legend: {
+                orientation: "v",
+                x: 1.02,
+                xanchor: "left",
+                y: 1,
+                yanchor: "top",
+                font: { size: 11 },
+              },
+            };
+
+            Plotly.newPlot(chartPieDiv, [tracePie], layoutPie, {
+              responsive: true,
+              displayModeBar: true,
+              modeBarButtonsToRemove: ["lasso2d", "select2d"],
+            });
+          })
+          .catch((err) => {
+            const message = err && err.message ? err.message : "Erro ao gerar gráficos.";
+            setResumo(`Falha no carregamento dos dados: ${message}`);
+            showError(chartBarDiv, message);
+            showError(chartPieDiv, message);
+          });
+      })();
+    </script>
+  </body>
+</html>

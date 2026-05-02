@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Perguntas da Área 45</title>
+  <link rel="icon" type="image/svg+xml" href="./Images/favicon.svg" />
+  <link rel="stylesheet" href="./CSS/site.css" />
+  <style>
+    .panel-text {
+      margin: 0;
+      border: 1px solid rgba(13, 125, 189, 0.25);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.88);
+      padding: 12px;
+      font-size: 0.92rem;
+      line-height: 1.5;
+      color: rgba(10, 39, 64, 0.9);
+    }
+
+    .panel-text> :first-child {
+      margin-top: 0;
+    }
+
+    .panel-text> :last-child {
+      margin-bottom: 0;
+    }
+
+    .panel-text p {
+      margin: 0 0 10px;
+    }
+
+    .panel-text ul,
+    .panel-text ol {
+      margin: 0 0 10px;
+      padding-left: 20px;
+    }
+
+    .panel-text li {
+      margin: 0 0 6px;
+    }
+
+    .qa-list {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .qa-list a {
+      margin-left: 8px;
+      font-size: 0.86rem;
+    }
+  </style>
+</head>
+
+<body class="home-page">
+  <div class="page" id="page">
+    <p class="page-home-link"><a href="./index.html">Página Principal</a></p>
+    <header class="page-header">
+      <h1>Alguns números da Área 45 (Interdisciplinar)</h1>
+      <p>
+        Perguntas e respostas em páginas individuais da Área 45.
+      </p>
+    </header>
+
+    <main class="page-content">
+      <section class="tiles-panel">
+        <h2 class="panel-title">Sobre este Documento</h2>
+        <div class="panel-text">
+          <p>
+            Esta página é um índice de perguntas e respostas sobre a Área 45 (Interdisciplinar).
+            Cada pergunta abre uma página própria com conteúdo textual,
+            detalhes sobre o processamento dos dados (para verificação e reprodutibilidade) e gráfico(s).
+          </p>
+        </div>
+      </section>
+
+      <section class="tiles-panel">
+        <h2 class="panel-title">Sobre os Dados</h2>
+        <div class="panel-text">
+          <p>As fontes de dados usadas para os gráficos e relatórios são:</p>
+          <ul>
+            <li>
+              <b>Portal de <a href="https://dadosabertos.capes.gov.br/">Dados Abertos da CAPES</a></b>,
+              em particular a base de avaliação da pós-graduação stricto sensu.
+            </li>
+            <li>
+              <b>Tabelas coletadas das planilhas de dados abertos</b>, com anotações.
+            </li>
+            <li>
+              <b><i>Web scraping</i></b> da antiga plataforma Sucupira.
+            </li>
+          </ul>
+          <p>Nenhum dado proprietário ou privado foi usado.</p>
+        </div>
+      </section>
+
+      <section class="tiles-panel">
+        <h2 class="panel-title">Perguntas</h2>
+        <div class="panel-text">
+          <ul class="qa-list">
+
+            <li>
+              Qual o número total e proporção de PPGs da Área 45 em relação a todas as outras áreas?
+              &rarr;<b><a href="./45_quantos_programas_area45.html">Resposta simples</a></b>
+              | <a href="./45_proporcao_ppgs.html">versão detalhada</a>.
+            </li>
+            <li>
+              Qual o fluxo de novos alunos na Área 45 em todos os anos desde 2013?
+              &rarr;<b><a href="./45_fluxo_ingressantes_desde2016.html">Resposta e gráficos</a>.</b>
+            </li>
+            <li>
+              Qual o fluxo de titulados na Área 45 em todos os anos desde 2013?
+              &rarr;<b><a href="./45_titulados_desde2016.html">Resposta e gráficos</a>.</b>
+            </li>
+
+            <hr>
+
+          </ul>
+
+          <ul class="qa-list">
+
+
+            <li>
+              Qual o fluxo de egressos na Área 45 em todos os anos desde 2013?
+              &rarr;<b><a href="./45_fluxo_egressos_desde2004.html">Resposta e gráficos</a>.</b>
+            </li>
+            <li>
+              Qual o saldo anual de ingressantes e titulados na Área 45 em todos os anos desde 2013?
+              &rarr;<b><a href="./45_saldo_fluxo_desde2016.html">Resposta e gráficos</a>.</b>
+            </li>
+            <li>
+              Como a frase histórica sobre 1999-2024 se sustenta frente às planilhas antigas?
+              &rarr;<b><a href="./45_revisao_frase_historica.html">Revisão com correções e gráficos</a>.</b>
+            </li>
+
+            <li>
+              Qual o fluxo de novos alunos na Área 45 (recorte quadrienal 2016, 2020 e 2024)?
+              &rarr;<b><a href="./45_fluxo_ingressantes_quadrienais.html">Resposta e gráficos</a>.</b>
+            </li>
+
+
+            <li>
+              Como evoluiu o número de programas da Área 45 ao longo do tempo?
+              &rarr;<b><a href="./45_crescimento_programas_area45.html">Resposta e gráficos</a>.</b>
+            </li>
+            <li>
+              Como estimar programas da Área 45 antes de 2013 usando as planilhas de discentes?
+              &rarr;<b><a href="./45_programas_proxy_desde2004.html">Proxy e validação</a>.</b>
+            </li>
+            <li>
+              Quantos alunos estão no sistema da Área 45 nos anos de avaliação (2016, 2020, 2024)?
+              &rarr;<b><a href="./45_alunos_anos_avaliacao.html">Resposta e gráficos</a>.</b>
+            </li>
+            <li>
+              Qual a proporção de docentes da Área 45 em relação a todas as outras áreas?
+              &rarr;<b><a href="./45_proporcao_docentes.html">Resposta e detalhes</a>.</b>
+            </li>
+            <li>
+              Qual a proporção de discentes da Área 45 em relação a todas as outras áreas?
+              &rarr;<b><a href="./45_proporcao_discentes.html">Resposta e detalhes</a>.</b>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+    </main>
+  </div>
+  <footer class="site-footnote">
+    <a href="http://linktr.ee/rafaeldcsantos">Rafael Santos</a>
+  </footer>
+</body>
+
+</html>

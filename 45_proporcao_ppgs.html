@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Área 45 - Proporção de PPGs</title>
+  <title>Área 45 - Número Total e Proporção de PPGs</title>
   <link rel="icon" type="image/svg+xml" href="./Images/favicon.svg" />
   <link rel="stylesheet" href="./CSS/site.css" />
   <style>
@@ -73,10 +73,10 @@
 
 <body>
   <div class="page" id="page">
-    <p class="page-home-link"><a href="./45index.html">Voltar para Área 45</a></p>
+    <p class="page-home-link"><a href="./45_artigo.html">Voltar para a lista de relatórios</a></p>
 
     <header class="page-header">
-      <h1>Qual a proporção de PPGs da Área 45 em relação a todas as outras áreas?</h1>
+      <h1>Qual o número total e proporção de PPGs da Área 45 em relação a todas as outras áreas?</h1>
     </header>
 
     <main class="page-content">
@@ -94,6 +94,13 @@
             <p class="chart-note">
               Histograma por área (X = nome abreviado da área, Y = contagem de programas em funcionamento). A barra da
               Área 45 está destacada em laranja.
+            </p>
+          </div>
+          <h3 class="section-title">Percentual de programas por área</h3>
+          <div class="chart-box">
+            <div id="chart-area-proporcao"></div>
+            <p class="chart-note">
+              Gráfico de pizza (donut) com a participação percentual de cada área no total de programas em funcionamento.
             </p>
           </div>
         </div>
@@ -180,6 +187,7 @@
         "./Data/programas_ativos_2024_comparativo_area45_grande_area_colegio.csv";
       const brStatesGeoJsonUrl = "./JS/br_states.json";
       const chartDiv = document.getElementById("chart-area-contagem");
+      const chartAreaPieDiv = document.getElementById("chart-area-proporcao");
       const chartUfDiv = document.getElementById("chart-uf-proporcao");
       const chartUfMapDiv = document.getElementById("chart-uf-choropleth");
       const chartGrandeAreaDiv = document.getElementById("chart-grande-area-45");
@@ -285,6 +293,7 @@
 
       if (typeof Plotly === "undefined") {
         showError(chartDiv, "Plotly não foi carregado.");
+        showError(chartAreaPieDiv, "Plotly não foi carregado.");
         showError(chartUfDiv, "Plotly não foi carregado.");
         showError(chartUfMapDiv, "Plotly não foi carregado.");
         showError(chartGrandeAreaDiv, "Plotly não foi carregado.");
@@ -322,6 +331,7 @@
 
           if (!rows.length) {
             showError(chartDiv, "CSV sem dados para o histograma.");
+            showError(chartAreaPieDiv, "CSV sem dados para o gráfico de pizza.");
             return;
           }
 
@@ -374,9 +384,93 @@
             displayModeBar: true,
             modeBarButtonsToRemove: ["lasso2d", "select2d"],
           });
+
+          const totalProgramas = rows.reduce((acc, row) => acc + row.y, 0);
+          const area45Row = rows.find((row) => row.code === "45");
+          const area45Count = area45Row ? area45Row.y : 0;
+          const shareArea45 = totalProgramas > 0 ? (area45Count / totalProgramas) * 100 : 0;
+          const labelsPie = rows.map((row) =>
+            row.areaAbreviada
+              ? `${row.areaAbreviada} (${row.code})`
+              : `${row.area} (${row.code})`
+          );
+          const valuesPie = rows.map((row) => row.y);
+          const textPie = rows.map((row) => {
+            const pct = totalProgramas > 0 ? (row.y / totalProgramas) * 100 : 0;
+            return `<b>${row.code}</b> (${pct.toFixed(1)}%)`;
+          });
+          const hoverPie = rows.map((row) => `${row.area} (Área ${row.code})`);
+          const palettePie = [
+            "#9ecae1",
+            "#6baed6",
+            "#4292c6",
+            "#3182bd",
+            "#2171b5",
+            "#08519c",
+            "#08306b",
+          ];
+          const colorsPie = rows.map((row, idx) => {
+            if (row.code === "45") {
+              return "rgba(242, 140, 40, 0.95)";
+            }
+            return palettePie[idx % palettePie.length];
+          });
+
+          const tracePie = {
+            type: "pie",
+            labels: labelsPie,
+            values: valuesPie,
+            hole: 0.38,
+            sort: false,
+            direction: "clockwise",
+            marker: {
+              colors: colorsPie,
+              line: { color: "rgba(255,255,255,0.9)", width: 1 },
+            },
+            hovertext: hoverPie,
+            text: textPie,
+            textinfo: "text",
+            textposition: "inside",
+            insidetextorientation: "radial",
+            hovertemplate:
+              "<b>%{hovertext}</b><br>" +
+              "Programas: %{value}<br>" +
+              "Participação: %{percent}<extra></extra>",
+          };
+
+          const layoutPie = {
+            title: {
+              text:
+                "Proporção do número de programas por área de avaliação (2024)" +
+                `<br><sup>Área 45: ${area45Count} de ${totalProgramas} (${shareArea45.toFixed(1)}%)</sup>`,
+              x: 0.5,
+              xanchor: "center",
+            },
+            margin: { t: 90, r: 14, b: 20, l: 14 },
+            paper_bgcolor: "rgba(0,0,0,0)",
+            plot_bgcolor: "rgba(255,255,255,0.6)",
+            legend: {
+              orientation: "v",
+              x: 1.02,
+              xanchor: "left",
+              y: 1,
+              yanchor: "top",
+              font: { size: 11 },
+            },
+          };
+
+          Plotly.newPlot(chartAreaPieDiv, [tracePie], layoutPie, {
+            responsive: true,
+            displayModeBar: true,
+            modeBarButtonsToRemove: ["lasso2d", "select2d"],
+          });
         })
         .catch((err) => {
           showError(chartDiv, err && err.message ? err.message : "Erro ao gerar histograma.");
+          showError(
+            chartAreaPieDiv,
+            err && err.message ? err.message : "Erro ao gerar gráfico de pizza."
+          );
         });
 
       Promise.all([
