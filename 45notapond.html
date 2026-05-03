@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Área 45 - Variação da Média Ponderada de Notas (2020-2024)</title>
+    <link rel="icon" type="image/svg+xml" href="./Images/favicon.svg" />
+    <link rel="stylesheet" href="./CSS/site.css" />
+    <style>
+      .section-card {
+        border: 1px solid rgba(13, 125, 189, 0.28);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 14px;
+      }
+
+      .section-title {
+        margin: 0 0 8px;
+        color: #08547f;
+        font-size: 1rem;
+      }
+
+      .section-card p,
+      .section-card ul,
+      .section-card ol {
+        margin: 0 0 10px;
+      }
+
+      .chart-box {
+        border: 1px dashed rgba(13, 125, 189, 0.4);
+        border-radius: 8px;
+        background: rgba(245, 249, 255, 0.9);
+        min-height: 280px;
+        padding: 10px;
+        margin-bottom: 10px;
+      }
+
+      :root {
+        --chart-max-width: 980px;
+      }
+
+      .chart-box [id^="chart-"] {
+        width: min(100%, var(--chart-max-width));
+        aspect-ratio: 4 / 3;
+        height: auto;
+        margin: 0 auto;
+      }
+
+      #chart-rank-delta,
+      #chart-rank-delta-pct {
+        width: min(100%, 1040px);
+        min-height: 760px;
+        height: auto;
+        aspect-ratio: auto;
+      }
+
+      .chart-note {
+        margin-top: 8px;
+        font-size: 0.84rem;
+        color: rgba(10, 39, 64, 0.78);
+      }
+
+      .answer-pill {
+        margin: 0 0 12px;
+        border: 1px solid rgba(13, 125, 189, 0.35);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.96);
+        padding: 10px 12px;
+        color: rgba(10, 39, 64, 0.95);
+      }
+
+      .answer-pill strong {
+        color: #08547f;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page" id="page">
+      <p class="page-home-link"><a href="./45.html">Voltar para a lista de relatórios</a></p>
+
+      <header class="page-header">
+        <h1>Variação da média ponderada de notas dos programas (2020-2024)</h1>
+        <p>
+          Comparação da Área 45 com as demais áreas usando apenas conceitos numéricos.
+        </p>
+      </header>
+
+      <main class="page-content">
+        <section class="tiles-panel">
+          <h2 class="panel-title">Comparação por média ponderada</h2>
+          <div class="section-card">
+            <p class="answer-pill" id="resumo-pond">Carregando dados...</p>
+
+            <h3 class="section-title">Como calcular</h3>
+            <p>
+              Base usada: <tt>Data/programas_media_ponderada_notas_2020_2024_por_area.csv</tt>.
+              A média ponderada por área e ano considera apenas notas numéricas:
+              <tt>MEDIA = sum(nota * quantidade_de_programas_na_nota) / sum(quantidade_de_programas_com_nota_numerica)</tt>.
+            </p>
+            <p>
+              Notas não numéricas (como <tt>A</tt>) ficam fora do denominador e do numerador da média.
+            </p>
+
+            <h3 class="section-title">Área 45 x Demais áreas (delta da média ponderada)</h3>
+            <div class="chart-box">
+              <div id="chart-comp-delta"></div>
+              <p class="chart-note">
+                Delta em pontos da média ponderada: média 2024 menos média 2020.
+              </p>
+            </div>
+
+            <h3 class="section-title">Ranking por variação em pontos</h3>
+            <div class="chart-box">
+              <div id="chart-rank-delta"></div>
+              <p class="chart-note">
+                Áreas ordenadas pelo delta absoluto da média ponderada (2020→2024). Área 45 em laranja.
+              </p>
+            </div>
+
+            <h3 class="section-title">Ranking por variação percentual</h3>
+            <div class="chart-box">
+              <div id="chart-rank-delta-pct"></div>
+              <p class="chart-note">
+                Áreas ordenadas pelo delta percentual da média ponderada (2020→2024). Área 45 em laranja.
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <footer class="site-footnote">
+      <a href="http://linktr.ee/rafaeldcsantos">Rafael Santos</a>
+    </footer>
+
+    <script src="./JS/plotly.min.js"></script>
+    <script>
+      (function () {
+        const csvUrl = "./Data/programas_media_ponderada_notas_2020_2024_por_area.csv";
+        const abreviacoesCsvUrl = "./Data/areas_avaliacao_abreviacoes.csv";
+        const chartCompDiv = document.getElementById("chart-comp-delta");
+        const chartRankDeltaDiv = document.getElementById("chart-rank-delta");
+        const chartRankDeltaPctDiv = document.getElementById("chart-rank-delta-pct");
+        const resumoEl = document.getElementById("resumo-pond");
+
+        function parseCsvLine(line) {
+          const out = [];
+          let current = "";
+          let inQuotes = false;
+          for (let i = 0; i < line.length; i += 1) {
+            const ch = line[i];
+            if (ch === '"') {
+              if (inQuotes && line[i + 1] === '"') {
+                current += '"';
+                i += 1;
+              } else {
+                inQuotes = !inQuotes;
+              }
+              continue;
+            }
+            if (ch === "," && !inQuotes) {
+              out.push(current);
+              current = "";
+              continue;
+            }
+            current += ch;
+          }
+          out.push(current);
+          return out;
+        }
+
+        function parseCsv(text) {
+          const lines = String(text || "")
+            .split(/\r?\n/)
+            .filter((line) => line.trim().length > 0);
+          if (lines.length < 2) {
+            return [];
+          }
+          const headers = parseCsvLine(lines[0]).map((h) => h.trim());
+          return lines.slice(1).map((line) => {
+            const cols = parseCsvLine(line);
+            const row = {};
+            headers.forEach((header, idx) => {
+              row[header] = (cols[idx] || "").trim();
+            });
+            return row;
+          });
+        }
+
+        function showError(target, message) {
+          if (!target) {
+            return;
+          }
+          target.innerHTML = `<p>${message}</p>`;
+        }
+
+        function setResumo(message) {
+          if (resumoEl) {
+            resumoEl.innerHTML = message;
+          }
+        }
+
+        function fetchCsvText(url) {
+          return fetch(url).then((resp) => {
+            if (!resp.ok) {
+              throw new Error(`Falha ao carregar CSV: HTTP ${resp.status} (${url})`);
+            }
+            return resp.text();
+          });
+        }
+
+        function toNum(value) {
+          const raw = String(value ?? "").trim();
+          if (!raw) {
+            return null;
+          }
+          const n = Number(raw);
+          return Number.isFinite(n) ? n : null;
+        }
+
+        if (typeof Plotly === "undefined") {
+          setResumo("Falha: biblioteca Plotly não carregada.");
+          showError(chartCompDiv, "Plotly não foi carregado.");
+          showError(chartRankDeltaDiv, "Plotly não foi carregado.");
+          showError(chartRankDeltaPctDiv, "Plotly não foi carregado.");
+          return;
+        }
+
+        Promise.all([fetchCsvText(csvUrl), fetchCsvText(abreviacoesCsvUrl)])
+          .then(([csvText, abbrCsvText]) => {
+            const abbrByCode = {};
+            parseCsv(abbrCsvText).forEach((row) => {
+              const code = String(row.CD_AREA_AVALIACAO || "").trim();
+              const shortLabel =
+                String(row.NM_AREA_AVALIACAO_ABREVIADA || "").trim() ||
+                String(row.NM_AREA_AVALIACAO || "").trim();
+              if (code) {
+                abbrByCode[code] = shortLabel;
+              }
+            });
+
+            const rows = parseCsv(csvText)
+              .map((row) => {
+                const code = String(row.CD_AREA_AVALIACAO || "").trim();
+                const name = String(row.NM_AREA_AVALIACAO || "").trim();
+                const m20 = toNum(row.MEDIA_PONDERADA_NOTA_2020);
+                const m24 = toNum(row.MEDIA_PONDERADA_NOTA_2024);
+                const d = toNum(row.DELTA_MEDIA_PONDERADA);
+                const dp = toNum(row.DELTA_MEDIA_PONDERADA_PCT);
+                const n20 = toNum(row.PROGRAMAS_NOTA_NUMERICA_2020) || 0;
+                const n24 = toNum(row.PROGRAMAS_NOTA_NUMERICA_2024) || 0;
+                const a20 = toNum(row.COUNT_NOTA_A_2020) || 0;
+                const a24 = toNum(row.COUNT_NOTA_A_2024) || 0;
+                return {
+                  code,
+                  name,
+                  label: `${abbrByCode[code] || name} (${code})`,
+                  m20,
+                  m24,
+                  d,
+                  dp,
+                  n20,
+                  n24,
+                  a20,
+                  a24,
+                };
+              })
+              .filter((row) => row.code && row.m20 !== null && row.m24 !== null && row.d !== null && row.dp !== null);
+
+            if (!rows.length) {
+              setResumo("Não há dados suficientes para a métrica ponderada.");
+              showError(chartCompDiv, "CSV sem dados para comparação.");
+              showError(chartRankDeltaDiv, "CSV sem dados para ranking.");
+              showError(chartRankDeltaPctDiv, "CSV sem dados para ranking.");
+              return;
+            }
+
+            const area45 = rows.find((row) => row.code === "45");
+            if (!area45) {
+              setResumo("Área 45 não encontrada no CSV de médias ponderadas.");
+              showError(chartCompDiv, "Área 45 ausente no CSV.");
+              showError(chartRankDeltaDiv, "Área 45 ausente no CSV.");
+              showError(chartRankDeltaPctDiv, "Área 45 ausente no CSV.");
+              return;
+            }
+
+            const outras = rows.filter((row) => row.code !== "45");
+            const weightedOut20Num = outras.reduce((acc, row) => acc + row.m20 * row.n20, 0);
+            const weightedOut20Den = outras.reduce((acc, row) => acc + row.n20, 0);
+            const weightedOut24Num = outras.reduce((acc, row) => acc + row.m24 * row.n24, 0);
+            const weightedOut24Den = outras.reduce((acc, row) => acc + row.n24, 0);
+            const out20 = weightedOut20Den > 0 ? weightedOut20Num / weightedOut20Den : null;
+            const out24 = weightedOut24Den > 0 ? weightedOut24Num / weightedOut24Den : null;
+            const outDelta = out20 !== null && out24 !== null ? out24 - out20 : null;
+            const outDeltaPct = out20 && outDelta !== null ? (outDelta / out20) * 100 : null;
+
+            const rowsDelta = [...rows].sort((a, b) => b.d - a.d);
+            const rowsDeltaPct = [...rows].sort((a, b) => b.dp - a.dp);
+            const rank45Delta = rowsDelta.findIndex((row) => row.code === "45") + 1;
+            const rank45DeltaPct = rowsDeltaPct.findIndex((row) => row.code === "45") + 1;
+
+            setResumo(
+              `<strong>Área 45</strong>: média ponderada numérica ${area45.m20.toFixed(3)} → ${area45.m24.toFixed(3)} ` +
+                `(<strong>${area45.d >= 0 ? "+" : ""}${area45.d.toFixed(3)}</strong> ponto; ${area45.dp.toFixed(2)}%). ` +
+                `Demais áreas (média ponderada agregada): ${out20 === null ? "n/d" : out20.toFixed(3)} → ${out24 === null ? "n/d" : out24.toFixed(3)} ` +
+                `(${outDelta === null ? "n/d" : `${outDelta >= 0 ? "+" : ""}${outDelta.toFixed(3)} ponto`}; ${outDeltaPct === null ? "n/d" : `${outDeltaPct.toFixed(2)}%`}). ` +
+                `Ranking da Área 45: <strong>${rank45Delta}º</strong> em delta absoluto e ` +
+                `<strong>${rank45DeltaPct}º</strong> em delta percentual.`
+            );
+
+            const compLabels = ["Área 45", "Demais áreas"];
+            const compValues = [area45.d, outDelta === null ? 0 : outDelta];
+            const compCustom = [
+              [area45.m20, area45.m24, area45.n20, area45.n24],
+              [out20, out24, weightedOut20Den, weightedOut24Den],
+            ];
+
+            Plotly.newPlot(
+              chartCompDiv,
+              [
+                {
+                  type: "bar",
+                  x: compLabels,
+                  y: compValues,
+                  marker: {
+                    color: ["rgba(242, 140, 40, 0.95)", "rgba(10, 98, 148, 0.84)"],
+                    line: { color: "rgba(10,39,64,0.45)", width: 1 },
+                  },
+                  customdata: compCustom,
+                  text: compValues.map((v) => `${v >= 0 ? "+" : ""}${v.toFixed(3)}`),
+                  textposition: "outside",
+                  hovertemplate:
+                    "<b>%{x}</b><br>" +
+                    "Média 2020: %{customdata[0]:.3f}<br>" +
+                    "Média 2024: %{customdata[1]:.3f}<br>" +
+                    "Delta: %{y:.3f} ponto<br>" +
+                    "Programas com nota numérica 2020: %{customdata[2]}<br>" +
+                    "Programas com nota numérica 2024: %{customdata[3]}<extra></extra>",
+                },
+              ],
+              {
+                title: { text: "Delta da média ponderada numérica (2020→2024)", x: 0.5, xanchor: "center" },
+                margin: { t: 70, r: 20, b: 55, l: 70 },
+                paper_bgcolor: "rgba(0,0,0,0)",
+                plot_bgcolor: "rgba(255,255,255,0.6)",
+                xaxis: { title: "Grupo" },
+                yaxis: {
+                  title: "Delta da média ponderada (pontos)",
+                  zeroline: true,
+                  zerolinewidth: 1.5,
+                  zerolinecolor: "rgba(10,39,64,0.5)",
+                },
+                showlegend: false,
+              },
+              { responsive: true, displayModeBar: true, modeBarButtonsToRemove: ["lasso2d", "select2d"] }
+            );
+
+            const rankLabels = rowsDelta.map((row) => row.label);
+            const rankValues = rowsDelta.map((row) => row.d);
+            const rankColors = rowsDelta.map((row) =>
+              row.code === "45" ? "rgba(242, 140, 40, 0.95)" : "rgba(10, 98, 148, 0.80)"
+            );
+            const rankCustom = rowsDelta.map((row) => [row.name, row.m20, row.m24, row.dp]);
+            const hDelta = Math.max(760, 180 + rowsDelta.length * 22);
+
+            Plotly.newPlot(
+              chartRankDeltaDiv,
+              [
+                {
+                  type: "bar",
+                  orientation: "h",
+                  y: rankLabels,
+                  x: rankValues,
+                  marker: {
+                    color: rankColors,
+                    line: { color: "rgba(10,39,64,0.45)", width: 1 },
+                  },
+                  customdata: rankCustom,
+                  hovertemplate:
+                    "<b>%{customdata[0]}</b><br>" +
+                    "Média 2020: %{customdata[1]:.3f}<br>" +
+                    "Média 2024: %{customdata[2]:.3f}<br>" +
+                    "Delta (pontos): %{x:.3f}<br>" +
+                    "Delta (%): %{customdata[3]:.2f}%<extra></extra>",
+                },
+              ],
+              {
+                title: { text: "Ranking por delta da média ponderada (pontos)", x: 0.5, xanchor: "center" },
+                height: hDelta,
+                margin: { t: 70, r: 20, b: 55, l: 280 },
+                paper_bgcolor: "rgba(0,0,0,0)",
+                plot_bgcolor: "rgba(255,255,255,0.6)",
+                xaxis: {
+                  title: "Delta da média ponderada (pontos)",
+                  zeroline: true,
+                  zerolinewidth: 1.5,
+                  zerolinecolor: "rgba(10,39,64,0.5)",
+                },
+                yaxis: {
+                  automargin: true,
+                  autorange: "reversed",
+                  tickfont: { size: 10 },
+                },
+                showlegend: false,
+              },
+              { responsive: true, displayModeBar: true, modeBarButtonsToRemove: ["lasso2d", "select2d"] }
+            );
+
+            const rankPctLabels = rowsDeltaPct.map((row) => row.label);
+            const rankPctValues = rowsDeltaPct.map((row) => row.dp);
+            const rankPctColors = rowsDeltaPct.map((row) =>
+              row.code === "45" ? "rgba(242, 140, 40, 0.95)" : "rgba(10, 98, 148, 0.80)"
+            );
+            const rankPctCustom = rowsDeltaPct.map((row) => [row.name, row.m20, row.m24, row.d]);
+            const hPct = Math.max(760, 180 + rowsDeltaPct.length * 22);
+
+            Plotly.newPlot(
+              chartRankDeltaPctDiv,
+              [
+                {
+                  type: "bar",
+                  orientation: "h",
+                  y: rankPctLabels,
+                  x: rankPctValues,
+                  marker: {
+                    color: rankPctColors,
+                    line: { color: "rgba(10,39,64,0.45)", width: 1 },
+                  },
+                  customdata: rankPctCustom,
+                  hovertemplate:
+                    "<b>%{customdata[0]}</b><br>" +
+                    "Média 2020: %{customdata[1]:.3f}<br>" +
+                    "Média 2024: %{customdata[2]:.3f}<br>" +
+                    "Delta (pontos): %{customdata[3]:.3f}<br>" +
+                    "Delta (%): %{x:.2f}%<extra></extra>",
+                },
+              ],
+              {
+                title: { text: "Ranking por delta percentual da média ponderada", x: 0.5, xanchor: "center" },
+                height: hPct,
+                margin: { t: 70, r: 20, b: 55, l: 280 },
+                paper_bgcolor: "rgba(0,0,0,0)",
+                plot_bgcolor: "rgba(255,255,255,0.6)",
+                xaxis: {
+                  title: "Delta percentual da média ponderada (%)",
+                  zeroline: true,
+                  zerolinewidth: 1.5,
+                  zerolinecolor: "rgba(10,39,64,0.5)",
+                },
+                yaxis: {
+                  automargin: true,
+                  autorange: "reversed",
+                  tickfont: { size: 10 },
+                },
+                showlegend: false,
+              },
+              { responsive: true, displayModeBar: true, modeBarButtonsToRemove: ["lasso2d", "select2d"] }
+            );
+          })
+          .catch((err) => {
+            const message = err && err.message ? err.message : "Erro ao gerar os gráficos.";
+            setResumo(`Falha no carregamento dos dados: ${message}`);
+            showError(chartCompDiv, message);
+            showError(chartRankDeltaDiv, message);
+            showError(chartRankDeltaPctDiv, message);
+          });
+      })();
+    </script>
+  </body>
+</html>

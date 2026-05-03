@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Área 45 - Sankey de Mudança de Notas (2020-2024)</title>
+    <link rel="icon" type="image/svg+xml" href="./Images/favicon.svg" />
+    <link rel="stylesheet" href="./CSS/site.css" />
+    <style>
+      .section-card {
+        border: 1px solid rgba(13, 125, 189, 0.28);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 14px;
+      }
+
+      .section-title {
+        margin: 0 0 8px;
+        color: #08547f;
+        font-size: 1rem;
+      }
+
+      .section-card p,
+      .section-card ul,
+      .section-card ol {
+        margin: 0 0 10px;
+      }
+
+      .answer-pill {
+        margin: 0 0 12px;
+        border: 1px solid rgba(13, 125, 189, 0.35);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.96);
+        padding: 10px 12px;
+        color: rgba(10, 39, 64, 0.95);
+      }
+
+      .answer-pill strong {
+        color: #08547f;
+      }
+
+      .chart-box {
+        border: 1px dashed rgba(13, 125, 189, 0.4);
+        border-radius: 8px;
+        background: rgba(245, 249, 255, 0.9);
+        min-height: 320px;
+        padding: 10px;
+        margin-bottom: 10px;
+      }
+
+      #chart-sankey {
+        width: min(100%, 1160px);
+        min-height: 700px;
+        height: auto;
+        margin: 0 auto;
+      }
+
+      .chart-note {
+        margin-top: 8px;
+        font-size: 0.84rem;
+        color: rgba(10, 39, 64, 0.78);
+      }
+
+      .controls-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        margin: 0 0 10px;
+      }
+
+      .controls-row label {
+        font-weight: 600;
+        color: #08547f;
+      }
+
+      .controls-row select {
+        min-width: 320px;
+        max-width: 100%;
+        padding: 6px 10px;
+        border: 1px solid rgba(13, 125, 189, 0.4);
+        border-radius: 8px;
+        background: #fff;
+        color: rgba(10, 39, 64, 0.95);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page" id="page">
+      <p class="page-home-link"><a href="./45.html">Voltar para a lista de relatórios</a></p>
+
+      <header class="page-header">
+        <h1>Mudança de notas entre 2020 e 2024 (Sankey por área)</h1>
+        <p>
+          Fluxo de transição de conceito por programa entre 2020 e 2024, com seleção de área.
+        </p>
+      </header>
+
+      <main class="page-content">
+        <section class="tiles-panel">
+          <h2 class="panel-title">Transições 2020→2024</h2>
+          <div class="section-card">
+            <p class="answer-pill" id="resumo-sankey">Carregando dados...</p>
+
+            <h3 class="section-title">Como calcular</h3>
+            <p>
+              Base de origem: <tt>RawData/br-capes-colsucup-prog-2020-2021-11-10.xlsx</tt> e
+              <tt>RawData/br-capes-colsucup-prog-2024-2025-12-01.xlsx</tt>, filtrando
+              <tt>DS_SITUACAO_PROGRAMA = EM FUNCIONAMENTO</tt>.
+            </p>
+            <p>
+              O pareamento é feito por <tt>CD_PROGRAMA_IES</tt>. O fluxo mostra apenas programas presentes em ambos os anos
+              (interseção 2020/2024). A área de referência para o filtro é a área do programa em 2024.
+            </p>
+
+            <div class="controls-row">
+              <label for="area-select">Área:</label>
+              <select id="area-select"></select>
+            </div>
+
+            <div class="chart-box">
+              <div id="chart-sankey"></div>
+              <p class="chart-note">
+                Nós à esquerda: notas em 2020. Nós à direita: notas em 2024. Largura do fluxo = quantidade de programas.
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <footer class="site-footnote">
+      <a href="http://linktr.ee/rafaeldcsantos">Rafael Santos</a>
+    </footer>
+
+    <script src="./JS/plotly.min.js"></script>
+    <script>
+      (function () {
+        const transitionsCsvUrl = "./Data/programas_notas_transicoes_2020_2024_por_area.csv";
+        const areasCsvUrl = "./Data/programas_notas_transicoes_2020_2024_areas.csv";
+        const abreviacoesCsvUrl = "./Data/areas_avaliacao_abreviacoes.csv";
+
+        const resumoEl = document.getElementById("resumo-sankey");
+        const chartDiv = document.getElementById("chart-sankey");
+        const areaSelectEl = document.getElementById("area-select");
+
+        function parseCsvLine(line) {
+          const out = [];
+          let current = "";
+          let inQuotes = false;
+          for (let i = 0; i < line.length; i += 1) {
+            const ch = line[i];
+            if (ch === '"') {
+              if (inQuotes && line[i + 1] === '"') {
+                current += '"';
+                i += 1;
+              } else {
+                inQuotes = !inQuotes;
+              }
+              continue;
+            }
+            if (ch === "," && !inQuotes) {
+              out.push(current);
+              current = "";
+              continue;
+            }
+            current += ch;
+          }
+          out.push(current);
+          return out;
+        }
+
+        function parseCsv(text) {
+          const lines = String(text || "")
+            .split(/\r?\n/)
+            .filter((line) => line.trim().length > 0);
+          if (lines.length < 2) {
+            return [];
+          }
+          const headers = parseCsvLine(lines[0]).map((h) => h.trim());
+          return lines.slice(1).map((line) => {
+            const cols = parseCsvLine(line);
+            const row = {};
+            headers.forEach((header, idx) => {
+              row[header] = (cols[idx] || "").trim();
+            });
+            return row;
+          });
+        }
+
+        function showError(target, message) {
+          if (!target) {
+            return;
+          }
+          target.innerHTML = `<p>${message}</p>`;
+        }
+
+        function setResumo(message) {
+          if (resumoEl) {
+            resumoEl.innerHTML = message;
+          }
+        }
+
+        function fetchCsvText(url) {
+          return fetch(url).then((resp) => {
+            if (!resp.ok) {
+              throw new Error(`Falha ao carregar CSV: HTTP ${resp.status} (${url})`);
+            }
+            return resp.text();
+          });
+        }
+
+        function toPtInt(n) {
+          return Number(n || 0).toLocaleString("pt-BR");
+        }
+
+        const noteOrder = ["A", "3", "4", "5", "6", "7", "NA"];
+        const noteColor = {
+          A: "rgba(120,120,120,0.85)",
+          3: "rgba(74, 160, 211, 0.92)",
+          4: "rgba(40, 132, 194, 0.92)",
+          5: "rgba(11, 104, 170, 0.92)",
+          6: "rgba(65, 148, 78, 0.95)",
+          7: "rgba(40, 117, 52, 0.95)",
+          NA: "rgba(168, 168, 168, 0.9)",
+        };
+
+        if (typeof Plotly === "undefined") {
+          setResumo("Falha: biblioteca Plotly não carregada.");
+          showError(chartDiv, "Plotly não foi carregado.");
+          return;
+        }
+
+        Promise.all([
+          fetchCsvText(transitionsCsvUrl),
+          fetchCsvText(areasCsvUrl),
+          fetchCsvText(abreviacoesCsvUrl),
+        ])
+          .then(([transitionsCsvText, areasCsvText, abbrCsvText]) => {
+            const transitions = parseCsv(transitionsCsvText).map((row) => ({
+              areaCode: String(row.CD_AREA_AVALIACAO_REF || "").trim(),
+              areaName: String(row.NM_AREA_AVALIACAO_REF || "").trim(),
+              note2020: String(row.NOTA_2020 || "NA").trim() || "NA",
+              note2024: String(row.NOTA_2024 || "NA").trim() || "NA",
+              count: Number(row.CONTAGEM_PROGRAMAS || 0),
+            }));
+
+            const areaMeta = {};
+            parseCsv(areasCsvText).forEach((row) => {
+              const code = String(row.CD_AREA_AVALIACAO_REF || "").trim();
+              if (!code) {
+                return;
+              }
+              areaMeta[code] = {
+                areaName: String(row.NM_AREA_AVALIACAO_REF || "").trim(),
+                commonPrograms: Number(row.PROGRAMAS_COMUNS_2020_2024 || 0),
+                migratedPrograms: Number(row.PROGRAMAS_MIGRADOS_DE_AREA || 0),
+                nota67_2020: Number(row.CONTAGEM_NOTA67_2020 || 0),
+                nota67_2024: Number(row.CONTAGEM_NOTA67_2024 || 0),
+              };
+            });
+
+            const abbrByCode = {};
+            parseCsv(abbrCsvText).forEach((row) => {
+              const code = String(row.CD_AREA_AVALIACAO || "").trim();
+              const shortLabel =
+                String(row.NM_AREA_AVALIACAO_ABREVIADA || "").trim() ||
+                String(row.NM_AREA_AVALIACAO || "").trim();
+              if (code) {
+                abbrByCode[code] = shortLabel;
+              }
+            });
+
+            if (!transitions.length) {
+              setResumo("Não há dados de transição para exibir.");
+              showError(chartDiv, "CSV de transições vazio.");
+              return;
+            }
+
+            const transitionsByArea = {};
+            transitions.forEach((row) => {
+              if (!row.areaCode) {
+                return;
+              }
+              if (!transitionsByArea[row.areaCode]) {
+                transitionsByArea[row.areaCode] = [];
+              }
+              if (row.count > 0) {
+                transitionsByArea[row.areaCode].push(row);
+              }
+            });
+
+            const areaCodes = Object.keys(transitionsByArea).sort((a, b) => {
+              if (a === "ALL") {
+                return -1;
+              }
+              if (b === "ALL") {
+                return 1;
+              }
+              const na = Number(a);
+              const nb = Number(b);
+              if (Number.isFinite(na) && Number.isFinite(nb)) {
+                return na - nb;
+              }
+              return a.localeCompare(b, "pt-BR");
+            });
+
+            areaSelectEl.innerHTML = "";
+            areaCodes.forEach((code) => {
+              const opt = document.createElement("option");
+              opt.value = code;
+              if (code === "ALL") {
+                opt.textContent = "Todas as áreas";
+              } else {
+                const shortLabel = abbrByCode[code] || areaMeta[code]?.areaName || transitionsByArea[code][0].areaName || code;
+                opt.textContent = `${shortLabel} (${code})`;
+              }
+              areaSelectEl.appendChild(opt);
+            });
+
+            const defaultCode = areaCodes.includes("45") ? "45" : areaCodes[0];
+            areaSelectEl.value = defaultCode;
+
+            function render(areaCode) {
+              const rows = transitionsByArea[areaCode] || [];
+              if (!rows.length) {
+                setResumo("Sem transições para a área selecionada.");
+                showError(chartDiv, "Sem dados de transição.");
+                return;
+              }
+
+              const notes20 = new Set(rows.map((r) => r.note2020));
+              const notes24 = new Set(rows.map((r) => r.note2024));
+              const ordered20 = noteOrder.filter((n) => notes20.has(n)).concat(
+                Array.from(notes20).filter((n) => !noteOrder.includes(n)).sort()
+              );
+              const ordered24 = noteOrder.filter((n) => notes24.has(n)).concat(
+                Array.from(notes24).filter((n) => !noteOrder.includes(n)).sort()
+              );
+
+              const leftNodes = ordered20.map((n) => `2020: ${n}`);
+              const rightNodes = ordered24.map((n) => `2024: ${n}`);
+              const labels = leftNodes.concat(rightNodes);
+
+              const leftIndex = {};
+              ordered20.forEach((n, i) => {
+                leftIndex[n] = i;
+              });
+              const rightOffset = ordered20.length;
+              const rightIndex = {};
+              ordered24.forEach((n, i) => {
+                rightIndex[n] = rightOffset + i;
+              });
+
+              const source = [];
+              const target = [];
+              const value = [];
+              const linkColors = [];
+              rows.forEach((r) => {
+                source.push(leftIndex[r.note2020]);
+                target.push(rightIndex[r.note2024]);
+                value.push(r.count);
+                const c = noteColor[r.note2024] || "rgba(120,120,120,0.65)";
+                linkColors.push(c.replace("0.95", "0.55").replace("0.92", "0.55").replace("0.9", "0.55").replace("0.85", "0.55"));
+              });
+
+              const nodeColors = ordered20
+                .map((n) => noteColor[n] || "rgba(120,120,120,0.9)")
+                .concat(ordered24.map((n) => noteColor[n] || "rgba(120,120,120,0.9)"));
+
+              const meta = areaMeta[areaCode] || {
+                areaName: areaCode === "ALL" ? "TODAS AS ÁREAS" : "",
+                commonPrograms: rows.reduce((acc, r) => acc + r.count, 0),
+                migratedPrograms: 0,
+                nota67_2020: rows.filter((r) => ["6", "7"].includes(r.note2020)).reduce((acc, r) => acc + r.count, 0),
+                nota67_2024: rows.filter((r) => ["6", "7"].includes(r.note2024)).reduce((acc, r) => acc + r.count, 0),
+              };
+
+              const delta67 = meta.nota67_2024 - meta.nota67_2020;
+              const pct67 = meta.nota67_2020 > 0 ? (delta67 / meta.nota67_2020) * 100 : null;
+
+              const areaLabel =
+                areaCode === "ALL"
+                  ? "todas as áreas"
+                  : `${abbrByCode[areaCode] || meta.areaName || "Área"} (${areaCode})`;
+
+              setResumo(
+                `Seleção: <strong>${areaLabel}</strong>. ` +
+                  `Programas comparáveis (presentes em 2020 e 2024): <strong>${toPtInt(meta.commonPrograms)}</strong>. ` +
+                  `Mudança de área no pareamento (para área de referência 2024): <strong>${toPtInt(meta.migratedPrograms)}</strong>. ` +
+                  `Programas nota 6/7: <strong>${toPtInt(meta.nota67_2020)}</strong> em 2020 → ` +
+                  `<strong>${toPtInt(meta.nota67_2024)}</strong> em 2024 ` +
+                  `(${delta67 >= 0 ? "+" : ""}${toPtInt(delta67)}; ${pct67 === null ? "n/d" : `${pct67.toFixed(2)}%`}).`
+              );
+
+              const titleText =
+                areaCode === "ALL"
+                  ? "Sankey de transição de notas (2020→2024) - Todas as áreas"
+                  : `Sankey de transição de notas (2020→2024) - ${areaLabel}`;
+
+              Plotly.newPlot(
+                chartDiv,
+                [
+                  {
+                    type: "sankey",
+                    arrangement: "snap",
+                    node: {
+                      label: labels,
+                      color: nodeColors,
+                      pad: 16,
+                      thickness: 16,
+                      line: {
+                        color: "rgba(10,39,64,0.45)",
+                        width: 0.6,
+                      },
+                    },
+                    link: {
+                      source,
+                      target,
+                      value,
+                      color: linkColors,
+                      hovertemplate: "%{source.label} → %{target.label}<br>Programas: %{value}<extra></extra>",
+                    },
+                  },
+                ],
+                {
+                  title: {
+                    text: titleText,
+                    x: 0.5,
+                    xanchor: "center",
+                  },
+                  margin: { t: 70, r: 20, b: 20, l: 20 },
+                  paper_bgcolor: "rgba(0,0,0,0)",
+                  plot_bgcolor: "rgba(255,255,255,0.6)",
+                  font: { size: 12, color: "rgba(10,39,64,0.95)" },
+                },
+                { responsive: true, displayModeBar: true, modeBarButtonsToRemove: ["lasso2d", "select2d"] }
+              );
+            }
+
+            areaSelectEl.addEventListener("change", () => {
+              render(areaSelectEl.value);
+            });
+
+            render(defaultCode);
+          })
+          .catch((err) => {
+            const message = err && err.message ? err.message : "Erro ao gerar o Sankey.";
+            setResumo(`Falha no carregamento dos dados: ${message}`);
+            showError(chartDiv, message);
+          });
+      })();
+    </script>
+  </body>
+</html>

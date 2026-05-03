@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Área 45 - Crescimento de Programas Nota 6 e 7 (2020-2024)</title>
+    <link rel="icon" type="image/svg+xml" href="./Images/favicon.svg" />
+    <link rel="stylesheet" href="./CSS/site.css" />
+    <style>
+      .section-card {
+        border: 1px solid rgba(13, 125, 189, 0.28);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 14px;
+      }
+
+      .section-title {
+        margin: 0 0 8px;
+        color: #08547f;
+        font-size: 1rem;
+      }
+
+      .section-card p,
+      .section-card ul,
+      .section-card ol {
+        margin: 0 0 10px;
+      }
+
+      .chart-box {
+        border: 1px dashed rgba(13, 125, 189, 0.4);
+        border-radius: 8px;
+        background: rgba(245, 249, 255, 0.9);
+        min-height: 280px;
+        padding: 10px;
+        margin-bottom: 10px;
+      }
+
+      :root {
+        --chart-max-width: 980px;
+      }
+
+      .chart-box [id^="chart-"] {
+        width: min(100%, var(--chart-max-width));
+        aspect-ratio: 4 / 3;
+        height: auto;
+        margin: 0 auto;
+      }
+
+      #chart-growth-abs,
+      #chart-growth-pct {
+        width: min(100%, 1040px);
+        min-height: 760px;
+        height: auto;
+        aspect-ratio: auto;
+      }
+
+      .chart-note {
+        margin-top: 8px;
+        font-size: 0.84rem;
+        color: rgba(10, 39, 64, 0.78);
+      }
+
+      .answer-pill {
+        margin: 0 0 12px;
+        border: 1px solid rgba(13, 125, 189, 0.35);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.96);
+        padding: 10px 12px;
+        color: rgba(10, 39, 64, 0.95);
+      }
+
+      .answer-pill strong {
+        color: #08547f;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page" id="page">
+      <p class="page-home-link"><a href="./45.html">Voltar para a lista de relatórios</a></p>
+
+      <header class="page-header">
+        <h1>Crescimento de programas nota 6 e 7 (2020-2024)</h1>
+        <p>Comparação para todas as áreas, com destaque para a Área 45 (Interdisciplinar).</p>
+      </header>
+
+      <main class="page-content">
+        <section class="tiles-panel">
+          <h2 class="panel-title">Comparação entre 2020 e 2024</h2>
+          <div class="section-card">
+            <p class="answer-pill" id="resumo-growth">Carregando dados...</p>
+
+            <h3 class="section-title">Como calcular</h3>
+            <p>
+              A base usada é <tt>Data/programas_ativos_nota67_crescimento_2020_2024_por_area.csv</tt>, construída a partir
+              dos arquivos brutos <tt>RawData/br-capes-colsucup-prog-2020-2021-11-10.xlsx</tt> e
+              <tt>RawData/br-capes-colsucup-prog-2024-2025-12-01.xlsx</tt>.
+            </p>
+            <p>
+              Em cada ano, foram filtrados apenas programas com <tt>DS_SITUACAO_PROGRAMA = EM FUNCIONAMENTO</tt>.
+              Para cada área, foi calculada a contagem de programas com <tt>CD_CONCEITO_PROGRAMA</tt> igual a 6 ou 7.
+            </p>
+
+            <h3 class="section-title">Crescimento absoluto (nota 6/7) por área</h3>
+            <div class="chart-box">
+              <div id="chart-growth-abs"></div>
+              <p class="chart-note">
+                Variação absoluta de programas nota 6/7 entre 2020 e 2024. Área 45 destacada em laranja.
+              </p>
+            </div>
+
+            <h3 class="section-title">Crescimento percentual (nota 6/7) por área</h3>
+            <div class="chart-box">
+              <div id="chart-growth-pct"></div>
+              <p class="chart-note">
+                Variação percentual de programas nota 6/7 entre 2020 e 2024. Área 45 destacada em laranja.
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <footer class="site-footnote">
+      <a href="http://linktr.ee/rafaeldcsantos">Rafael Santos</a>
+    </footer>
+
+    <script src="./JS/plotly.min.js"></script>
+    <script>
+      (function () {
+        const csvUrl = "./Data/programas_ativos_nota67_crescimento_2020_2024_por_area.csv";
+        const abreviacoesCsvUrl = "./Data/areas_avaliacao_abreviacoes.csv";
+        const chartAbsDiv = document.getElementById("chart-growth-abs");
+        const chartPctDiv = document.getElementById("chart-growth-pct");
+        const resumoEl = document.getElementById("resumo-growth");
+
+        function parseCsvLine(line) {
+          const out = [];
+          let current = "";
+          let inQuotes = false;
+          for (let i = 0; i < line.length; i += 1) {
+            const ch = line[i];
+            if (ch === '"') {
+              if (inQuotes && line[i + 1] === '"') {
+                current += '"';
+                i += 1;
+              } else {
+                inQuotes = !inQuotes;
+              }
+              continue;
+            }
+            if (ch === "," && !inQuotes) {
+              out.push(current);
+              current = "";
+              continue;
+            }
+            current += ch;
+          }
+          out.push(current);
+          return out;
+        }
+
+        function parseCsv(text) {
+          const lines = String(text || "")
+            .split(/\r?\n/)
+            .filter((line) => line.trim().length > 0);
+          if (lines.length < 2) {
+            return [];
+          }
+          const headers = parseCsvLine(lines[0]).map((h) => h.trim());
+          return lines.slice(1).map((line) => {
+            const cols = parseCsvLine(line);
+            const row = {};
+            headers.forEach((header, idx) => {
+              row[header] = (cols[idx] || "").trim();
+            });
+            return row;
+          });
+        }
+
+        function showError(target, message) {
+          if (!target) {
+            return;
+          }
+          target.innerHTML = `<p>${message}</p>`;
+        }
+
+        function setResumo(message) {
+          if (resumoEl) {
+            resumoEl.innerHTML = message;
+          }
+        }
+
+        function fetchCsvText(url) {
+          return fetch(url).then((resp) => {
+            if (!resp.ok) {
+              throw new Error(`Falha ao carregar CSV: HTTP ${resp.status} (${url})`);
+            }
+            return resp.text();
+          });
+        }
+
+        if (typeof Plotly === "undefined") {
+          setResumo("Falha: biblioteca Plotly não carregada.");
+          showError(chartAbsDiv, "Plotly não foi carregado.");
+          showError(chartPctDiv, "Plotly não foi carregado.");
+          return;
+        }
+
+        Promise.all([fetchCsvText(csvUrl), fetchCsvText(abreviacoesCsvUrl)])
+          .then(([csvText, abbrCsvText]) => {
+            const abbrByCode = {};
+            parseCsv(abbrCsvText).forEach((row) => {
+              const code = String(row.CD_AREA_AVALIACAO || "").trim();
+              const shortLabel =
+                String(row.NM_AREA_AVALIACAO_ABREVIADA || "").trim() ||
+                String(row.NM_AREA_AVALIACAO || "").trim();
+              if (code) {
+                abbrByCode[code] = shortLabel;
+              }
+            });
+
+            const rows = parseCsv(csvText)
+              .map((row) => {
+                const code = String(row.CD_AREA_AVALIACAO || "").trim();
+                const name = String(row.NM_AREA_AVALIACAO || "").trim();
+                const n20 = Number(row.PROGRAMAS_NOTA_6_7_2020 || 0);
+                const n24 = Number(row.PROGRAMAS_NOTA_6_7_2024 || 0);
+                const dabs = Number(row.CRESCIMENTO_ABSOLUTO_2020_2024 || 0);
+                const dpctRaw = String(row.CRESCIMENTO_PERCENTUAL_2020_2024 || "").trim();
+                const dpct = dpctRaw === "" ? null : Number(dpctRaw);
+                const p20 = Number(row.PROPORCAO_NOTA_6_7_2020_PCT || 0);
+                const p24 = Number(row.PROPORCAO_NOTA_6_7_2024_PCT || 0);
+                const n6_20 = Number(row.PROGRAMAS_NOTA_6_2020 || 0);
+                const n7_20 = Number(row.PROGRAMAS_NOTA_7_2020 || 0);
+                const n6_24 = Number(row.PROGRAMAS_NOTA_6_2024 || 0);
+                const n7_24 = Number(row.PROGRAMAS_NOTA_7_2024 || 0);
+                const t20 = Number(row.TOTAL_PROGRAMAS_2020 || 0);
+                const t24 = Number(row.TOTAL_PROGRAMAS_2024 || 0);
+                return {
+                  code,
+                  name,
+                  label: `${abbrByCode[code] || name} (${code})`,
+                  n20,
+                  n24,
+                  dabs,
+                  dpct,
+                  p20,
+                  p24,
+                  n6_20,
+                  n7_20,
+                  n6_24,
+                  n7_24,
+                  t20,
+                  t24,
+                };
+              })
+              .filter((row) => row.code && Number.isFinite(row.n20) && Number.isFinite(row.n24));
+
+            if (!rows.length) {
+              setResumo("Não há dados para a comparação 2020-2024.");
+              showError(chartAbsDiv, "CSV sem dados para crescimento absoluto.");
+              showError(chartPctDiv, "CSV sem dados para crescimento percentual.");
+              return;
+            }
+
+            const area45 = rows.find((row) => row.code === "45");
+            if (!area45) {
+              setResumo("Área 45 não encontrada na base de crescimento.");
+              showError(chartAbsDiv, "Área 45 ausente no CSV.");
+              showError(chartPctDiv, "Área 45 ausente no CSV.");
+              return;
+            }
+
+            const totalN20 = rows.reduce((acc, row) => acc + row.n20, 0);
+            const totalN24 = rows.reduce((acc, row) => acc + row.n24, 0);
+            const totalDelta = totalN24 - totalN20;
+            const totalPct = totalN20 > 0 ? ((totalN24 - totalN20) / totalN20) * 100 : null;
+
+            const rowsAbs = [...rows].sort((a, b) => {
+              if (b.dabs !== a.dabs) {
+                return b.dabs - a.dabs;
+              }
+              return a.label.localeCompare(b.label, "pt-BR");
+            });
+            const rank45Abs = rowsAbs.findIndex((row) => row.code === "45") + 1;
+
+            const rowsPct = rows
+              .filter((row) => row.dpct !== null && Number.isFinite(row.dpct))
+              .sort((a, b) => {
+                if (b.dpct !== a.dpct) {
+                  return b.dpct - a.dpct;
+                }
+                return a.label.localeCompare(b.label, "pt-BR");
+              });
+            const rank45Pct = rowsPct.findIndex((row) => row.code === "45") + 1;
+
+            setResumo(
+              `<strong>Área 45</strong>: ${area45.n20} → ${area45.n24} programas nota 6/7 ` +
+                `(<strong>${area45.dabs >= 0 ? "+" : ""}${area45.dabs}</strong>, ${area45.dpct === null ? "n/d" : `${area45.dpct.toFixed(2)}%`}). ` +
+                `Em proporção: ${area45.p20.toFixed(2)}% → ${area45.p24.toFixed(2)}%. ` +
+                `Ranking de crescimento absoluto: <strong>${rank45Abs}º</strong>; ` +
+                `ranking de crescimento percentual: <strong>${rank45Pct}º</strong>. ` +
+                `Total Brasil: ${totalN20} → ${totalN24} ` +
+                `(<strong>${totalDelta >= 0 ? "+" : ""}${totalDelta}</strong>, ${totalPct === null ? "n/d" : `${totalPct.toFixed(2)}%`}).`
+            );
+
+            const absLabels = rowsAbs.map((row) => row.label);
+            const absValues = rowsAbs.map((row) => row.dabs);
+            const absColors = rowsAbs.map((row) =>
+              row.code === "45" ? "rgba(242, 140, 40, 0.95)" : "rgba(10, 98, 148, 0.80)"
+            );
+            const absCustom = rowsAbs.map((row) => [row.name, row.n20, row.n24, row.dpct]);
+            const dynamicAbsHeight = Math.max(760, 180 + rowsAbs.length * 22);
+
+            Plotly.newPlot(
+              chartAbsDiv,
+              [
+                {
+                  type: "bar",
+                  orientation: "h",
+                  y: absLabels,
+                  x: absValues,
+                  marker: {
+                    color: absColors,
+                    line: { color: "rgba(10,39,64,0.45)", width: 1 },
+                  },
+                  customdata: absCustom,
+                  hovertemplate:
+                    "<b>%{customdata[0]}</b><br>" +
+                    "Nota 6/7 em 2020: %{customdata[1]}<br>" +
+                    "Nota 6/7 em 2024: %{customdata[2]}<br>" +
+                    "Crescimento absoluto: %{x}<br>" +
+                    "Crescimento percentual: %{customdata[3]:.2f}%<extra></extra>",
+                },
+              ],
+              {
+                title: {
+                  text: "Crescimento absoluto de programas nota 6/7 por área (2020→2024)",
+                  x: 0.5,
+                  xanchor: "center",
+                },
+                height: dynamicAbsHeight,
+                margin: { t: 70, r: 20, b: 55, l: 280 },
+                paper_bgcolor: "rgba(0,0,0,0)",
+                plot_bgcolor: "rgba(255,255,255,0.6)",
+                xaxis: {
+                  title: "Variação absoluta (programas nota 6/7)",
+                  zeroline: true,
+                  zerolinewidth: 1.5,
+                  zerolinecolor: "rgba(10,39,64,0.5)",
+                },
+                yaxis: {
+                  automargin: true,
+                  autorange: "reversed",
+                  tickfont: { size: 10 },
+                },
+                showlegend: false,
+              },
+              { responsive: true, displayModeBar: true, modeBarButtonsToRemove: ["lasso2d", "select2d"] }
+            );
+
+            if (!rowsPct.length) {
+              showError(chartPctDiv, "Não há dados para crescimento percentual.");
+              return;
+            }
+
+            const pctLabels = rowsPct.map((row) => row.label);
+            const pctValues = rowsPct.map((row) => row.dpct);
+            const pctColors = rowsPct.map((row) =>
+              row.code === "45" ? "rgba(242, 140, 40, 0.95)" : "rgba(10, 98, 148, 0.80)"
+            );
+            const pctCustom = rowsPct.map((row) => [row.name, row.n20, row.n24, row.dabs]);
+            const dynamicPctHeight = Math.max(760, 180 + rowsPct.length * 22);
+
+            Plotly.newPlot(
+              chartPctDiv,
+              [
+                {
+                  type: "bar",
+                  orientation: "h",
+                  y: pctLabels,
+                  x: pctValues,
+                  marker: {
+                    color: pctColors,
+                    line: { color: "rgba(10,39,64,0.45)", width: 1 },
+                  },
+                  customdata: pctCustom,
+                  hovertemplate:
+                    "<b>%{customdata[0]}</b><br>" +
+                    "Nota 6/7 em 2020: %{customdata[1]}<br>" +
+                    "Nota 6/7 em 2024: %{customdata[2]}<br>" +
+                    "Crescimento absoluto: %{customdata[3]}<br>" +
+                    "Crescimento percentual: %{x:.2f}%<extra></extra>",
+                },
+              ],
+              {
+                title: {
+                  text: "Crescimento percentual de programas nota 6/7 por área (2020→2024)",
+                  x: 0.5,
+                  xanchor: "center",
+                },
+                height: dynamicPctHeight,
+                margin: { t: 70, r: 20, b: 55, l: 280 },
+                paper_bgcolor: "rgba(0,0,0,0)",
+                plot_bgcolor: "rgba(255,255,255,0.6)",
+                xaxis: {
+                  title: "Variação percentual (%)",
+                  zeroline: true,
+                  zerolinewidth: 1.5,
+                  zerolinecolor: "rgba(10,39,64,0.5)",
+                },
+                yaxis: {
+                  automargin: true,
+                  autorange: "reversed",
+                  tickfont: { size: 10 },
+                },
+                showlegend: false,
+              },
+              { responsive: true, displayModeBar: true, modeBarButtonsToRemove: ["lasso2d", "select2d"] }
+            );
+          })
+          .catch((err) => {
+            const message = err && err.message ? err.message : "Erro ao gerar os gráficos.";
+            setResumo(`Falha no carregamento dos dados: ${message}`);
+            showError(chartAbsDiv, message);
+            showError(chartPctDiv, message);
+          });
+      })();
+    </script>
+  </body>
+</html>

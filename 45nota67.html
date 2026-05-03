@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Área 45 - Programas Nota 6 e 7 (2024)</title>
+    <link rel="icon" type="image/svg+xml" href="./Images/favicon.svg" />
+    <link rel="stylesheet" href="./CSS/site.css" />
+    <style>
+      .section-card {
+        border: 1px solid rgba(13, 125, 189, 0.28);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 14px;
+      }
+
+      .section-title {
+        margin: 0 0 8px;
+        color: #08547f;
+        font-size: 1rem;
+      }
+
+      .section-card p,
+      .section-card ul,
+      .section-card ol {
+        margin: 0 0 10px;
+      }
+
+      .chart-box {
+        border: 1px dashed rgba(13, 125, 189, 0.4);
+        border-radius: 8px;
+        background: rgba(245, 249, 255, 0.9);
+        min-height: 280px;
+        padding: 10px;
+        margin-bottom: 10px;
+      }
+
+      :root {
+        --chart-max-width: 980px;
+      }
+
+      .chart-box [id^="chart-"] {
+        width: min(100%, var(--chart-max-width));
+        aspect-ratio: 4 / 3;
+        height: auto;
+        margin: 0 auto;
+      }
+
+      #chart-rank-prop,
+      #chart-rank-total {
+        width: min(100%, 1040px);
+        min-height: 760px;
+        aspect-ratio: auto;
+      }
+
+      #chart-stack-notas {
+        width: min(100%, 1200px);
+        min-height: 780px;
+        aspect-ratio: auto;
+      }
+
+      .chart-note {
+        margin-top: 8px;
+        font-size: 0.84rem;
+        color: rgba(10, 39, 64, 0.78);
+      }
+
+      .answer-pill {
+        margin: 0 0 12px;
+        border: 1px solid rgba(13, 125, 189, 0.35);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.96);
+        padding: 10px 12px;
+        color: rgba(10, 39, 64, 0.95);
+      }
+
+      .answer-pill strong {
+        color: #08547f;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page" id="page">
+      <p class="page-home-link"><a href="./45.html">Voltar para a lista de relatórios</a></p>
+
+      <header class="page-header">
+        <h1>Programas nota 6 e 7 na Área 45 (2024)</h1>
+        <p>Quantidade e proporção de programas com conceito 6 ou 7, comparando a Área 45 com as demais áreas.</p>
+      </header>
+
+      <main class="page-content">
+        <section class="tiles-panel">
+          <h2 class="panel-title">Comparação em 2024</h2>
+          <div class="section-card">
+            <p class="answer-pill" id="resumo-nota67">Carregando dados...</p>
+
+            <h3 class="section-title">Como calcular</h3>
+            <p>
+              A base usada é <tt>Data/programas_ativos_2024_nota67_por_area.csv</tt>, derivada de
+              <tt>Data/programas_ativos_2024_campos_analise_area45.csv</tt> (somente
+              <tt>DS_SITUACAO_PROGRAMA = EM FUNCIONAMENTO</tt>).
+            </p>
+            <p>
+              Para cada área foi calculado: <tt>PROGRAMAS_NOTA_6_7 = PROGRAMAS_NOTA_6 + PROGRAMAS_NOTA_7</tt> e
+              <tt>PROPORCAO_NOTA_6_7_PCT = PROGRAMAS_NOTA_6_7 / TOTAL_PROGRAMAS_2024</tt>.
+            </p>
+            <p>
+              No histograma empilhado, a distribuição por nota (3 a 7) usa os campos
+              <tt>COUNT_NOTA_3_2024 ... COUNT_NOTA_7_2024</tt> da base
+              <tt>Data/programas_media_ponderada_notas_2020_2024_por_area.csv</tt>.
+            </p>
+
+            <h3 class="section-title">Área 45 x Demais Áreas (proporção de notas 6/7)</h3>
+            <div class="chart-box">
+              <div id="chart-comp-prop"></div>
+              <p class="chart-note">
+                Barras mostram a fração de programas nota 6/7 sobre o total de programas em cada grupo.
+              </p>
+            </div>
+
+            <h3 class="section-title">Ranking por proporção de programas nota 6/7</h3>
+            <div class="chart-box">
+              <div id="chart-rank-prop"></div>
+              <p class="chart-note">
+                Ranking de todas as áreas pela proporção de programas nota 6/7. Área 45 destacada em laranja.
+              </p>
+            </div>
+
+            <h3 class="section-title">Ranking por total de programas nota 6/7</h3>
+            <div class="chart-box">
+              <div id="chart-rank-total"></div>
+              <p class="chart-note">
+                Ranking por quantidade absoluta de programas nota 6/7 em 2024. Área 45 destacada em laranja.
+              </p>
+            </div>
+
+            <h3 class="section-title">Distribuição de notas por área (histograma empilhado)</h3>
+            <div class="chart-box">
+              <div id="chart-stack-notas"></div>
+              <p class="chart-note">
+                Barras empilhadas verticais com contagem de programas por nota (3, 4, 5, 6 e 7) em cada área.
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <footer class="site-footnote">
+      <a href="http://linktr.ee/rafaeldcsantos">Rafael Santos</a>
+    </footer>
+
+    <script src="./JS/plotly.min.js"></script>
+    <script>
+      (function () {
+        const csvUrl = "./Data/programas_ativos_2024_nota67_por_area.csv";
+        const distCsvUrl = "./Data/programas_media_ponderada_notas_2020_2024_por_area.csv";
+        const abreviacoesCsvUrl = "./Data/areas_avaliacao_abreviacoes.csv";
+        const chartCompDiv = document.getElementById("chart-comp-prop");
+        const chartRankDiv = document.getElementById("chart-rank-prop");
+        const chartRankTotalDiv = document.getElementById("chart-rank-total");
+        const chartStackNotasDiv = document.getElementById("chart-stack-notas");
+        const resumoEl = document.getElementById("resumo-nota67");
+
+        function parseCsvLine(line) {
+          const out = [];
+          let current = "";
+          let inQuotes = false;
+          for (let i = 0; i < line.length; i += 1) {
+            const ch = line[i];
+            if (ch === '"') {
+              if (inQuotes && line[i + 1] === '"') {
+                current += '"';
+                i += 1;
+              } else {
+                inQuotes = !inQuotes;
+              }
+              continue;
+            }
+            if (ch === "," && !inQuotes) {
+              out.push(current);
+              current = "";
+              continue;
+            }
+            current += ch;
+          }
+          out.push(current);
+          return out;
+        }
+
+        function parseCsv(text) {
+          const lines = String(text || "")
+            .split(/\r?\n/)
+            .filter((line) => line.trim().length > 0);
+          if (lines.length < 2) {
+            return [];
+          }
+          const headers = parseCsvLine(lines[0]).map((h) => h.trim());
+          return lines.slice(1).map((line) => {
+            const cols = parseCsvLine(line);
+            const row = {};
+            headers.forEach((header, idx) => {
+              row[header] = (cols[idx] || "").trim();
+            });
+            return row;
+          });
+        }
+
+        function showError(target, message) {
+          if (!target) {
+            return;
+          }
+          target.innerHTML = `<p>${message}</p>`;
+        }
+
+        function setResumo(message) {
+          if (resumoEl) {
+            resumoEl.innerHTML = message;
+          }
+        }
+
+        function fetchCsvText(url) {
+          return fetch(url).then((resp) => {
+            if (!resp.ok) {
+              throw new Error(`Falha ao carregar CSV: HTTP ${resp.status} (${url})`);
+            }
+            return resp.text();
+          });
+        }
+
+        if (typeof Plotly === "undefined") {
+          setResumo("Falha: biblioteca Plotly não carregada.");
+          showError(chartCompDiv, "Plotly não foi carregado.");
+          showError(chartRankDiv, "Plotly não foi carregado.");
+          showError(chartRankTotalDiv, "Plotly não foi carregado.");
+          showError(chartStackNotasDiv, "Plotly não foi carregado.");
+          return;
+        }
+
+        Promise.all([fetchCsvText(csvUrl), fetchCsvText(abreviacoesCsvUrl), fetchCsvText(distCsvUrl)])
+          .then(([csvText, abbrCsvText, distCsvText]) => {
+            const abbrByCode = {};
+            parseCsv(abbrCsvText).forEach((row) => {
+              const code = String(row.CD_AREA_AVALIACAO || "").trim();
+              const label =
+                String(row.NM_AREA_AVALIACAO_ABREVIADA || "").trim() ||
+                String(row.NM_AREA_AVALIACAO || "").trim();
+              if (code) {
+                abbrByCode[code] = label;
+              }
+            });
+
+            const distByCode = {};
+            parseCsv(distCsvText).forEach((row) => {
+              const code = String(row.CD_AREA_AVALIACAO || "").trim();
+              if (!code) {
+                return;
+              }
+              distByCode[code] = {
+                nota3: Number(row.COUNT_NOTA_3_2024 || 0),
+                nota4: Number(row.COUNT_NOTA_4_2024 || 0),
+                nota5: Number(row.COUNT_NOTA_5_2024 || 0),
+                nota6: Number(row.COUNT_NOTA_6_2024 || 0),
+                nota7: Number(row.COUNT_NOTA_7_2024 || 0),
+              };
+            });
+
+            const rows = parseCsv(csvText)
+              .map((row) => {
+                const code = String(row.CD_AREA_AVALIACAO || "").trim();
+                const name = String(row.NM_AREA_AVALIACAO || "").trim();
+                const total = Number(row.TOTAL_PROGRAMAS_2024 || 0);
+                const nota6 = Number(row.PROGRAMAS_NOTA_6 || 0);
+                const nota7 = Number(row.PROGRAMAS_NOTA_7 || 0);
+                const nota67 = Number(row.PROGRAMAS_NOTA_6_7 || 0);
+                const propPct = Number(row.PROPORCAO_NOTA_6_7_PCT || 0);
+                const dist = distByCode[code] || { nota3: 0, nota4: 0, nota5: 0, nota6: 0, nota7: 0 };
+                return {
+                  code,
+                  name,
+                  nameShort: abbrByCode[code] || name,
+                  total,
+                  nota6,
+                  nota7,
+                  nota67,
+                  propPct,
+                  nota3: dist.nota3,
+                  nota4: dist.nota4,
+                  nota5: dist.nota5,
+                };
+              })
+              .filter((row) => row.code && row.total > 0)
+              .sort((a, b) => b.propPct - a.propPct);
+
+            if (!rows.length) {
+              setResumo("Não há dados disponíveis para esta pergunta.");
+              showError(chartCompDiv, "CSV sem dados para o comparativo.");
+              showError(chartRankDiv, "CSV sem dados para o ranking.");
+              showError(chartRankTotalDiv, "CSV sem dados para o ranking.");
+              showError(chartStackNotasDiv, "CSV sem dados para o histograma.");
+              return;
+            }
+
+            const area45 = rows.find((row) => row.code === "45");
+            if (!area45) {
+              setResumo("A Área 45 não foi encontrada na base de programas 2024.");
+              showError(chartCompDiv, "Área 45 ausente no CSV.");
+              showError(chartRankDiv, "Área 45 ausente no CSV.");
+              showError(chartRankTotalDiv, "Área 45 ausente no CSV.");
+              showError(chartStackNotasDiv, "Área 45 ausente no CSV.");
+              return;
+            }
+
+            const totalBrasil = rows.reduce((acc, row) => acc + row.total, 0);
+            const total67Brasil = rows.reduce((acc, row) => acc + row.nota67, 0);
+
+            const outrasRows = rows.filter((row) => row.code !== "45");
+            const totalOutras = outrasRows.reduce((acc, row) => acc + row.total, 0);
+            const total67Outras = outrasRows.reduce((acc, row) => acc + row.nota67, 0);
+            const propOutrasPct = totalOutras > 0 ? (total67Outras / totalOutras) * 100 : 0;
+
+            const share45No67 = total67Brasil > 0 ? (area45.nota67 / total67Brasil) * 100 : 0;
+            const rankRowsProp = [...rows];
+            const rankRowsTotal = [...rows].sort((a, b) => b.nota67 - a.nota67 || b.propPct - a.propPct);
+            const rank45Prop = rankRowsProp.findIndex((row) => row.code === "45") + 1;
+            const rank45Total = rankRowsTotal.findIndex((row) => row.code === "45") + 1;
+
+            setResumo(
+              `<strong>Área 45</strong>: ${area45.nota67} programas nota 6/7 ` +
+                `(<strong>${area45.nota6}</strong> nota 6 e <strong>${area45.nota7}</strong> nota 7) ` +
+                `em um total de ${area45.total} programas (${area45.propPct.toFixed(2)}%). ` +
+                `Demais áreas: ${total67Outras}/${totalOutras} (${propOutrasPct.toFixed(2)}%). ` +
+                `Participação da Área 45 no total nacional de notas 6/7: ${share45No67.toFixed(2)}%. ` +
+                `Posição da Área 45: <strong>${rank45Prop}ª</strong> no ranking proporcional e ` +
+                `<strong>${rank45Total}ª</strong> no ranking por total (de ${rows.length} áreas).`
+            );
+
+            const compLabels = ["Área 45", "Demais áreas"];
+            const compValues = [area45.propPct, propOutrasPct];
+            const compCustom = [
+              [area45.nota67, area45.total, area45.nota6, area45.nota7],
+              [total67Outras, totalOutras, "-", "-"],
+            ];
+
+            Plotly.newPlot(
+              chartCompDiv,
+              [
+                {
+                  type: "bar",
+                  x: compLabels,
+                  y: compValues,
+                  marker: {
+                    color: ["rgba(242, 140, 40, 0.94)", "rgba(10, 98, 148, 0.84)"],
+                    line: { color: "rgba(10,39,64,0.45)", width: 1 },
+                  },
+                  customdata: compCustom,
+                  text: compValues.map((v) => `${v.toFixed(2)}%`),
+                  textposition: "outside",
+                  hovertemplate:
+                    "<b>%{x}</b><br>Proporção nota 6/7: %{y:.2f}%<br>" +
+                    "Programas nota 6/7: %{customdata[0]}<br>" +
+                    "Total de programas: %{customdata[1]}<br>" +
+                    "Nota 6: %{customdata[2]}<br>" +
+                    "Nota 7: %{customdata[3]}<extra></extra>",
+                },
+              ],
+              {
+                title: { text: "Proporção de programas nota 6/7 em 2024", x: 0.5, xanchor: "center" },
+                margin: { t: 70, r: 20, b: 55, l: 70 },
+                paper_bgcolor: "rgba(0,0,0,0)",
+                plot_bgcolor: "rgba(255,255,255,0.6)",
+                xaxis: { title: "Grupo" },
+                yaxis: {
+                  title: "Proporção de nota 6/7 (%)",
+                  rangemode: "tozero",
+                },
+                showlegend: false,
+              },
+              { responsive: true, displayModeBar: true, modeBarButtonsToRemove: ["lasso2d", "select2d"] }
+            );
+
+            const rankRows = rankRowsProp;
+            const labels = rankRows.map((row) => `${row.nameShort} (${row.code})`);
+            const values = rankRows.map((row) => row.propPct);
+            const colors = rankRows.map((row) =>
+              row.code === "45" ? "rgba(242, 140, 40, 0.94)" : "rgba(10, 98, 148, 0.80)"
+            );
+            const custom = rankRows.map((row) => [row.name, row.nota67, row.total, row.nota6, row.nota7]);
+            const dynamicHeight = Math.max(760, 180 + rankRows.length * 22);
+
+            Plotly.newPlot(
+              chartRankDiv,
+              [
+                {
+                  type: "bar",
+                  orientation: "h",
+                  y: labels,
+                  x: values,
+                  marker: {
+                    color: colors,
+                    line: { color: "rgba(10,39,64,0.45)", width: 1 },
+                  },
+                  customdata: custom,
+                  hovertemplate:
+                    "<b>%{customdata[0]}</b><br>" +
+                    "Proporção nota 6/7: %{x:.2f}%<br>" +
+                    "Programas nota 6/7: %{customdata[1]}<br>" +
+                    "Total de programas: %{customdata[2]}<br>" +
+                    "Nota 6: %{customdata[3]}<br>" +
+                    "Nota 7: %{customdata[4]}<extra></extra>",
+                },
+              ],
+              {
+                title: { text: "Ranking proporcional de programas nota 6/7 por área", x: 0.5, xanchor: "center" },
+                height: dynamicHeight,
+                margin: { t: 70, r: 20, b: 55, l: 280 },
+                paper_bgcolor: "rgba(0,0,0,0)",
+                plot_bgcolor: "rgba(255,255,255,0.6)",
+                xaxis: {
+                  title: "Proporção de nota 6/7 (%)",
+                  rangemode: "tozero",
+                },
+                yaxis: {
+                  automargin: true,
+                  autorange: "reversed",
+                  tickfont: { size: 10 },
+                },
+                showlegend: false,
+              },
+              { responsive: true, displayModeBar: true, modeBarButtonsToRemove: ["lasso2d", "select2d"] }
+            );
+
+            const labelsTotal = rankRowsTotal.map((row) => `${row.nameShort} (${row.code})`);
+            const valuesTotal = rankRowsTotal.map((row) => row.nota67);
+            const colorsTotal = rankRowsTotal.map((row) =>
+              row.code === "45" ? "rgba(242, 140, 40, 0.94)" : "rgba(14, 116, 138, 0.80)"
+            );
+            const customTotal = rankRowsTotal.map((row) => [row.name, row.propPct, row.total, row.nota6, row.nota7]);
+            const dynamicHeightTotal = Math.max(760, 180 + rankRowsTotal.length * 22);
+
+            Plotly.newPlot(
+              chartRankTotalDiv,
+              [
+                {
+                  type: "bar",
+                  orientation: "h",
+                  y: labelsTotal,
+                  x: valuesTotal,
+                  marker: {
+                    color: colorsTotal,
+                    line: { color: "rgba(10,39,64,0.45)", width: 1 },
+                  },
+                  customdata: customTotal,
+                  hovertemplate:
+                    "<b>%{customdata[0]}</b><br>" +
+                    "Programas nota 6/7: %{x}<br>" +
+                    "Proporção nota 6/7: %{customdata[1]:.2f}%<br>" +
+                    "Total de programas: %{customdata[2]}<br>" +
+                    "Nota 6: %{customdata[3]}<br>" +
+                    "Nota 7: %{customdata[4]}<extra></extra>",
+                },
+              ],
+              {
+                title: { text: "Ranking por total de programas nota 6/7 (2024)", x: 0.5, xanchor: "center" },
+                height: dynamicHeightTotal,
+                margin: { t: 70, r: 20, b: 55, l: 280 },
+                paper_bgcolor: "rgba(0,0,0,0)",
+                plot_bgcolor: "rgba(255,255,255,0.6)",
+                xaxis: {
+                  title: "Programas nota 6/7 (quantidade)",
+                  rangemode: "tozero",
+                },
+                yaxis: {
+                  automargin: true,
+                  autorange: "reversed",
+                  tickfont: { size: 10 },
+                },
+                showlegend: false,
+              },
+              { responsive: true, displayModeBar: true, modeBarButtonsToRemove: ["lasso2d", "select2d"] }
+            );
+
+            const stackRows = [...rows].sort((a, b) => b.nota67 - a.nota67 || b.total - a.total);
+            const stackLabels = stackRows.map((row) => `${row.nameShort} (${row.code})`);
+            const stackCustom = stackRows.map((row) => [row.name, row.total, row.nota67, row.propPct]);
+            const tracesStack = [
+              { nota: "3", key: "nota3", color: "rgba(141, 211, 199, 0.9)" },
+              { nota: "4", key: "nota4", color: "rgba(255, 255, 179, 0.9)" },
+              { nota: "5", key: "nota5", color: "rgba(190, 186, 218, 0.9)" },
+              { nota: "6", key: "nota6", color: "rgba(251, 128, 114, 0.9)" },
+              { nota: "7", key: "nota7", color: "rgba(128, 177, 211, 0.9)" },
+            ].map((cfg) => ({
+              type: "bar",
+              x: stackLabels,
+              y: stackRows.map((row) => row[cfg.key] || 0),
+              name: `Nota ${cfg.nota}`,
+              marker: { color: cfg.color, line: { color: "rgba(10,39,64,0.30)", width: 0.5 } },
+              customdata: stackCustom,
+              hovertemplate:
+                "<b>%{customdata[0]}</b><br>" +
+                `Nota ${cfg.nota}: %{y}<br>` +
+                "Total de programas da área: %{customdata[1]}<br>" +
+                "Programas nota 6/7: %{customdata[2]}<br>" +
+                "Proporção nota 6/7: %{customdata[3]:.2f}%<extra></extra>",
+            }));
+
+            Plotly.newPlot(
+              chartStackNotasDiv,
+              tracesStack,
+              {
+                title: { text: "Distribuição de notas por área (2024)", x: 0.5, xanchor: "center" },
+                barmode: "stack",
+                height: 780,
+                margin: { t: 70, r: 20, b: 180, l: 70 },
+                paper_bgcolor: "rgba(0,0,0,0)",
+                plot_bgcolor: "rgba(255,255,255,0.6)",
+                xaxis: {
+                  title: "Áreas",
+                  tickangle: -60,
+                  automargin: true,
+                },
+                yaxis: {
+                  title: "Programas por nota (contagem)",
+                  rangemode: "tozero",
+                },
+                legend: {
+                  orientation: "h",
+                  x: 0.5,
+                  xanchor: "center",
+                  y: 1.12,
+                  yanchor: "bottom",
+                },
+              },
+              { responsive: true, displayModeBar: true, modeBarButtonsToRemove: ["lasso2d", "select2d"] }
+            );
+          })
+          .catch((err) => {
+            const message = err && err.message ? err.message : "Erro ao gerar os gráficos.";
+            setResumo(`Falha no carregamento dos dados: ${message}`);
+            showError(chartCompDiv, message);
+            showError(chartRankDiv, message);
+            showError(chartRankTotalDiv, message);
+            showError(chartStackNotasDiv, message);
+          });
+      })();
+    </script>
+  </body>
+</html>

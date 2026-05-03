@@ -150,11 +150,29 @@
               <tt>Data/egressos_area45_teses_overlap_2004_2012.csv</tt>.
             </p>
 
+            <h3 class="section-title">Texto histórico corrigido (com base na série 1999-2024)</h3>
+            <p id="texto-historico-corrigido">
+              Carregando marcos calculados de programas e egressos...
+            </p>
+            <p>
+              Série de programas usada neste ajuste: <tt>Data/programas_area45_hibrido_1999_2024.csv</tt>
+              (1999-2003 via proxy de teses; 2004-2012 via proxy de discentes; 2013-2024 via contagem oficial de
+              programas ativos distintos).
+            </p>
+
             <h3 class="section-title">Série final 1999-2024 (recriada + observada)</h3>
             <div class="chart-box">
               <div id="chart-serie-final"></div>
               <p class="chart-note">
                 Laranja: estimativa baseada na base histórica de teses (1999-2003). Azul: egressos observados em discentes (2004-2024).
+              </p>
+            </div>
+
+            <h3 class="section-title">Crescimento conjunto de programas e egressos (1999-2024)</h3>
+            <div class="chart-box">
+              <div id="chart-programas-egressos"></div>
+              <p class="chart-note">
+                Barras: egressos por ano (eixo esquerdo). Linha: programas da Área 45 (eixo direito), com marcos calculados.
               </p>
             </div>
           </div>
@@ -171,9 +189,12 @@
       (function () {
         const serieCsvUrl = "./Data/egressos_area45_reconstruido_1999_2024.csv";
         const overlapCsvUrl = "./Data/egressos_area45_teses_overlap_2004_2012.csv";
+        const programasCsvUrl = "./Data/programas_area45_hibrido_1999_2024.csv";
 
         const chartSerieDiv = document.getElementById("chart-serie-final");
+        const chartProgramasEgressosDiv = document.getElementById("chart-programas-egressos");
         const resumoEl = document.getElementById("resumo-estimativa");
+        const textoHistoricoEl = document.getElementById("texto-historico-corrigido");
 
         function parseCsvLine(line) {
           const out = [];
@@ -257,6 +278,12 @@
           }
         }
 
+        function setTextoHistorico(message) {
+          if (textoHistoricoEl) {
+            textoHistoricoEl.innerHTML = message;
+          }
+        }
+
         function fetchCsvText(url) {
           return fetch(url).then((resp) => {
             if (!resp.ok) {
@@ -269,11 +296,13 @@
         if (typeof Plotly === "undefined") {
           setResumo("Falha: biblioteca Plotly não carregada.");
           showError(chartSerieDiv, "Plotly não foi carregado.");
+          showError(chartProgramasEgressosDiv, "Plotly não foi carregado.");
+          setTextoHistorico("Falha ao calcular marcos: biblioteca Plotly não carregada.");
           return;
         }
 
-        Promise.all([fetchCsvText(serieCsvUrl), fetchCsvText(overlapCsvUrl)])
-          .then(([serieCsvText, overlapCsvText]) => {
+        Promise.all([fetchCsvText(serieCsvUrl), fetchCsvText(overlapCsvUrl), fetchCsvText(programasCsvUrl)])
+          .then(([serieCsvText, overlapCsvText, programasCsvText]) => {
             const serieRows = parseCsv(serieCsvText)
               .map((row) => ({
                 ano: safeNumber(row.ANO),
@@ -297,9 +326,20 @@
               .filter((row) => row.ano > 0)
               .sort((a, b) => a.ano - b.ano);
 
+            const programasRows = parseCsv(programasCsvText)
+              .map((row) => ({
+                ano: safeNumber(row.ANO),
+                programas: safeNumber(row.PROGRAMAS_SERIE_FINAL),
+                fonte: String(row.FONTE_FINAL || "").trim(),
+              }))
+              .filter((row) => row.ano > 0 && row.programas > 0)
+              .sort((a, b) => a.ano - b.ano);
+
             if (!serieRows.length) {
               setResumo("Não há dados suficientes para construir a série recriada.");
               showError(chartSerieDiv, "CSV sem dados.");
+              showError(chartProgramasEgressosDiv, "CSV sem dados.");
+              setTextoHistorico("Sem dados suficientes para calcular os marcos de programas.");
               return;
             }
 
@@ -315,6 +355,16 @@
             const totalEstimado = estimados.reduce((acc, row) => acc + row.egressos, 0);
             const totalObservado = observados.reduce((acc, row) => acc + row.egressos, 0);
             const totalSerie = totalEstimado + totalObservado;
+            const egressos1999_2003 = serieRows
+              .filter((row) => row.ano >= 1999 && row.ano <= 2003)
+              .reduce((acc, row) => acc + row.egressos, 0);
+            const egressos2004_2009 = serieRows
+              .filter((row) => row.ano >= 2004 && row.ano <= 2009)
+              .reduce((acc, row) => acc + row.egressos, 0);
+            const egressos2010_2024 = serieRows
+              .filter((row) => row.ano >= 2010 && row.ano <= 2024)
+              .reduce((acc, row) => acc + row.egressos, 0);
+            const mediaEgressos2010_2024 = egressos2010_2024 / 15;
 
             const ratiosClean = overlapRows.filter((row) => !row.outlier).map((row) => row.ratio);
             const factorConservative = ratiosClean.length ? Math.min(...ratiosClean) : null;
@@ -332,6 +382,83 @@
                 `Fator conservador aplicado: <strong>${factorConservative === null ? "n/d" : toPtFixed(factorConservative, 6)}</strong> ` +
                 `(mediano limpo: ${factorMedian === null ? "n/d" : toPtFixed(factorMedian, 6)}).`
             );
+
+            const programasByYear = {};
+            const programasFonteByYear = {};
+            programasRows.forEach((row) => {
+              programasByYear[row.ano] = row.programas;
+              programasFonteByYear[row.ano] = row.fonte;
+            });
+
+            function p(ano) {
+              return Object.prototype.hasOwnProperty.call(programasByYear, ano) ? programasByYear[ano] : null;
+            }
+
+            function nearestMarco(target) {
+              if (!programasRows.length) {
+                return null;
+              }
+              let best = null;
+              programasRows.forEach((row) => {
+                const d = Math.abs(row.programas - target);
+                if (!best || d < best.dist || (d === best.dist && row.ano < best.ano)) {
+                  best = { ano: row.ano, programas: row.programas, fonte: row.fonte, dist: d };
+                }
+              });
+              return best;
+            }
+
+            const marco46 = nearestMarco(46);
+            const marco104 = nearestMarco(104);
+            const marco283 = nearestMarco(283);
+            const marco370 =
+              p(2024) === null
+                ? nearestMarco(370)
+                : { ano: 2024, programas: p(2024), fonte: programasFonteByYear[2024], dist: Math.abs(p(2024) - 370) };
+
+            if (programasRows.length) {
+              const p1999 = p(1999);
+              const p2003 = p(2003);
+              const p2004 = p(2004);
+              const p2009 = p(2009);
+              const p2010 = p(2010);
+              const p2024 = p(2024);
+
+              setTextoHistorico(
+                `Na fase inicial (1999-2003), a série de programas calculada vai de <strong>${p1999 === null ? "n/d" : toPtInt(
+                  p1999
+                )}</strong> para <strong>${p2003 === null ? "n/d" : toPtInt(
+                  p2003
+                )}</strong>, com <strong>${toPtInt(
+                  egressos1999_2003
+                )} egressos</strong> no período. Na fase de expansão (2004-2009), os programas vão de <strong>${
+                  p2004 === null ? "n/d" : toPtInt(p2004)
+                }</strong> para <strong>${p2009 === null ? "n/d" : toPtInt(
+                  p2009
+                )}</strong>, com <strong>${toPtInt(
+                  egressos2004_2009
+                )} egressos</strong>. Na consolidação (2010-2024), os programas vão de <strong>${
+                  p2010 === null ? "n/d" : toPtInt(p2010)
+                }</strong> para <strong>${p2024 === null ? "n/d" : toPtInt(
+                  p2024
+                )}</strong>, com <strong>${toPtInt(
+                  egressos2010_2024
+                )} egressos</strong> (média anual <strong>${toPtFixed(
+                  mediaEgressos2010_2024,
+                  1
+                )}</strong>). Marcos calculados próximos de 46, 104, 283 e ~370 programas: <strong>${
+                  marco46 ? `${toPtInt(marco46.programas)} (${marco46.ano})` : "n/d"
+                }</strong>, <strong>${
+                  marco104 ? `${toPtInt(marco104.programas)} (${marco104.ano})` : "n/d"
+                }</strong>, <strong>${
+                  marco283 ? `${toPtInt(marco283.programas)} (${marco283.ano})` : "n/d"
+                }</strong> e <strong>${
+                  marco370 ? `${toPtInt(marco370.programas)} (${marco370.ano})` : "n/d"
+                }</strong>.`
+              );
+            } else {
+              setTextoHistorico("Sem série de programas para calcular os marcos de crescimento.");
+            }
 
             Plotly.newPlot(
               chartSerieDiv,
@@ -363,11 +490,106 @@
               },
               { responsive: true, displayModeBar: true, modeBarButtonsToRemove: ["lasso2d", "select2d"] }
             );
+
+            if (!programasRows.length) {
+              showError(chartProgramasEgressosDiv, "Sem dados de programas para o gráfico combinado.");
+              return;
+            }
+
+            const progSeries = anos.map((ano) =>
+              Object.prototype.hasOwnProperty.call(programasByYear, ano) ? programasByYear[ano] : null
+            );
+            const progFonteSeries = anos.map((ano) =>
+              Object.prototype.hasOwnProperty.call(programasFonteByYear, ano) ? programasFonteByYear[ano] : ""
+            );
+
+            const marcos = [marco46, marco104, marco283, marco370].filter((m) => !!m);
+            const marcosX = marcos.map((m) => m.ano);
+            const marcosY = marcos.map((m) => m.programas);
+            const marcosText = marcos.map((m, idx) => {
+              const label = idx === 0 ? "≈46" : idx === 1 ? "≈104" : idx === 2 ? "283" : "~370";
+              return `${label}: ${toPtInt(m.programas)} (${m.ano})`;
+            });
+
+            Plotly.newPlot(
+              chartProgramasEgressosDiv,
+              [
+                {
+                  type: "bar",
+                  name: "Egressos",
+                  x: anos,
+                  y: vals,
+                  marker: {
+                    color: "rgba(10, 98, 148, 0.70)",
+                    line: { color: "rgba(10,39,64,0.35)", width: 0.8 },
+                  },
+                  hovertemplate: "Ano %{x}<br>Egressos: %{y}<extra></extra>",
+                },
+                {
+                  type: "scatter",
+                  mode: "lines+markers",
+                  name: "Programas",
+                  x: anos,
+                  y: progSeries,
+                  yaxis: "y2",
+                  line: { color: "rgba(242, 140, 40, 0.95)", width: 2.6 },
+                  marker: { color: "rgba(242, 140, 40, 0.95)", size: 6 },
+                  customdata: progFonteSeries,
+                  hovertemplate:
+                    "Ano %{x}<br>Programas: %{y}<br>Fonte: %{customdata}<extra></extra>",
+                },
+                {
+                  type: "scatter",
+                  mode: "markers+text",
+                  name: "Marcos calculados",
+                  x: marcosX,
+                  y: marcosY,
+                  yaxis: "y2",
+                  marker: {
+                    color: "rgba(214, 48, 49, 0.95)",
+                    size: 9,
+                    symbol: "diamond",
+                    line: { color: "rgba(10,39,64,0.50)", width: 1 },
+                  },
+                  text: marcosText,
+                  textposition: "top center",
+                  hovertemplate: "%{text}<extra></extra>",
+                },
+              ],
+              {
+                title: {
+                  text: "Área 45: crescimento simultâneo de egressos e programas (1999-2024)",
+                  x: 0.5,
+                  xanchor: "center",
+                },
+                margin: { t: 76, r: 72, b: 78, l: 70 },
+                paper_bgcolor: "rgba(0,0,0,0)",
+                plot_bgcolor: "rgba(255,255,255,0.6)",
+                xaxis: { title: "Ano base", tickmode: "linear", dtick: 1 },
+                yaxis: { title: "Egressos por ano", rangemode: "tozero" },
+                yaxis2: {
+                  title: "Programas (série híbrida)",
+                  overlaying: "y",
+                  side: "right",
+                  rangemode: "tozero",
+                },
+                legend: {
+                  orientation: "h",
+                  x: 0.5,
+                  xanchor: "center",
+                  y: 1.14,
+                  yanchor: "bottom",
+                },
+              },
+              { responsive: true, displayModeBar: true, modeBarButtonsToRemove: ["lasso2d", "select2d"] }
+            );
           })
           .catch((err) => {
             const message = err && err.message ? err.message : "Erro ao gerar a estimativa.";
             setResumo(`Falha no carregamento dos dados: ${message}`);
             showError(chartSerieDiv, message);
+            showError(chartProgramasEgressosDiv, message);
+            setTextoHistorico(`Falha ao calcular marcos: ${message}`);
           });
       })();
     </script>
