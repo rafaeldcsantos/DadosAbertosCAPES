@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Área 45 - Fluxo de Novos Alunos (Desde 2013)</title>
+    <title>Área 45 - Alunos nos Anos de Avaliação</title>
     <link rel="icon" type="image/svg+xml" href="./Images/favicon.svg" />
     <link rel="stylesheet" href="./CSS/site.css" />
     <style>
@@ -46,8 +46,8 @@
         margin: 0 auto;
       }
 
-      #chart-fluxo-crescimento-abs,
-      #chart-fluxo-crescimento-pct {
+      #chart-alunos-crescimento-abs,
+      #chart-alunos-crescimento-pct {
         width: min(100%, 1040px);
         min-height: 760px;
         height: auto;
@@ -72,117 +72,56 @@
       .answer-pill strong {
         color: #08547f;
       }
-
-      .table-box {
-        border: 1px dashed rgba(13, 125, 189, 0.4);
-        border-radius: 8px;
-        background: rgba(245, 249, 255, 0.9);
-        padding: 10px;
-        margin-bottom: 10px;
-      }
-
-      .table-scroll {
-        overflow-x: auto;
-      }
-
-      .data-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.9rem;
-        background: rgba(255, 255, 255, 0.95);
-      }
-
-      .data-table th,
-      .data-table td {
-        border: 1px solid rgba(13, 125, 189, 0.22);
-        padding: 8px 10px;
-        text-align: left;
-        white-space: nowrap;
-      }
-
-      .data-table thead th {
-        background: rgba(13, 125, 189, 0.14);
-        color: #08547f;
-      }
-
-      .data-table tbody tr.area45-row td {
-        background: rgba(242, 140, 40, 0.16);
-        font-weight: 600;
-      }
     </style>
   </head>
   <body>
     <div class="page" id="page">
-      <p class="page-home-link"><a href="./45_artigo.html">Voltar para a lista de relatórios</a></p>
+      <p class="page-home-link"><a href="./45.html">Voltar para a lista de relatórios</a></p>
 
       <header class="page-header">
-        <h1>Fluxo de novos alunos na Área 45 (desde 2013)</h1>
-        <p>Série anual de 2013 em diante, usando ST_INGRESSANTE = SIM.</p>
+        <h1>Quantos alunos há na Área 45 nos anos de avaliação?</h1>
+        <p>Recorte dos anos-base 2016, 2020 e 2024 (snapshot de alunos no sistema).</p>
       </header>
 
       <main class="page-content">
         <section class="tiles-panel">
-          <h2 class="panel-title">Novos Alunos por Ano de Avaliação</h2>
+          <h2 class="panel-title">Alunos por Ano de Avaliação</h2>
           <div class="section-card">
-            <p class="answer-pill" id="resumo-fluxo">Carregando dados...</p>
+            <p class="answer-pill" id="resumo-alunos">Carregando dados...</p>
 
             <h3 class="section-title">Como calcular</h3>
             <p>
-              A base usada é <tt>Data/discentes_ingressantes_por_ano_area.csv</tt>, gerada a partir de
-              <tt>RawData/br-capes-colsucup-discentes-*.xlsx</tt> com filtro
-              <tt>ST_INGRESSANTE = SIM</tt>.
-              O indicador principal desta página é
-              <tt>CONTAGEM_INGRESSANTES_ID_PESSOA</tt> (ID de aluno distinto por ano e área).
+              A base usada é <tt>Data/discentes_contagem_por_ano_area.csv</tt>, gerada a partir de
+              <tt>RawData/br-capes-colsucup-discentes-*.xlsx</tt>. Cada valor é uma contagem de
+              <tt>ID_PESSOA</tt> distinto por <tt>(AN_BASE, CD_AREA_AVALIACAO)</tt>, isto é,
+              <b>alunos registrados no sistema naquele ano</b>.
             </p>
             <p>
-              Observação: este é um proxy de fluxo de entrada anual no sistema CAPES, não um censo de todos os
-              matriculados.
+              Importante: este recorte representa estoque/snapshot anual, não entradas de ingressantes.
             </p>
 
-            <h3 class="section-title">Séries de novos alunos por área (Área 45 destacada)</h3>
+            <h3 class="section-title">Séries de alunos por área (Área 45 destacada)</h3>
             <div class="chart-box">
-              <div id="chart-fluxo-serie"></div>
+              <div id="chart-alunos-serie"></div>
               <p class="chart-note">
-                Séries anuais de todas as áreas desde 2013; a Área 45 está destacada em laranja.
+                Séries de todas as áreas em 2016, 2020 e 2024; a Área 45 está destacada em laranja.
               </p>
             </div>
 
             <h3 class="section-title">Comparação de crescimento entre áreas (absoluto)</h3>
             <div class="chart-box">
-              <div id="chart-fluxo-crescimento-abs"></div>
+              <div id="chart-alunos-crescimento-abs"></div>
               <p class="chart-note">
-                Variação absoluta de novos alunos entre o primeiro e o último ano da série. Área 45 em laranja.
+                Variação absoluta de alunos entre 2016 e 2024. A Área 45 está destacada em laranja.
               </p>
             </div>
 
             <h3 class="section-title">Comparação de crescimento entre áreas (percentual)</h3>
             <div class="chart-box">
-              <div id="chart-fluxo-crescimento-pct"></div>
+              <div id="chart-alunos-crescimento-pct"></div>
               <p class="chart-note">
-                Variação percentual de novos alunos entre o primeiro e o último ano da série. Área 45 em laranja.
+                Variação percentual de alunos entre 2016 e 2024. A Área 45 está destacada em laranja.
               </p>
-            </div>
-
-            <h3 class="section-title">Média de novos ingressantes/ano por área</h3>
-            <div class="table-box">
-              <p class="chart-note" id="tabela-media-ingressantes-periodo">Carregando tabela...</p>
-              <div class="table-scroll">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th>Posição</th>
-                      <th>Área</th>
-                      <th>Total no período</th>
-                      <th>Média de novos ingressantes/ano</th>
-                    </tr>
-                  </thead>
-                  <tbody id="tabela-media-ingressantes-body">
-                    <tr>
-                      <td colspan="4">Carregando dados...</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
             </div>
           </div>
         </section>
@@ -196,21 +135,20 @@
     <script src="./JS/plotly.min.js"></script>
     <script>
       (function () {
-        const fluxoCsvUrl = "./Data/discentes_ingressantes_por_ano_area.csv";
+        const alunosCsvUrl = "./Data/discentes_contagem_por_ano_area.csv";
         const abreviacoesCsvUrl = "./Data/areas_avaliacao_abreviacoes.csv";
-        const minYear = 2013;
+        const yearsAllowed = new Set([2016, 2020, 2024]);
 
-        const chartSerieDiv = document.getElementById("chart-fluxo-serie");
-        const chartAbsDiv = document.getElementById("chart-fluxo-crescimento-abs");
-        const chartPctDiv = document.getElementById("chart-fluxo-crescimento-pct");
-        const resumoEl = document.getElementById("resumo-fluxo");
-        const mediaTableBodyEl = document.getElementById("tabela-media-ingressantes-body");
-        const mediaTablePeriodoEl = document.getElementById("tabela-media-ingressantes-periodo");
+        const chartSerieDiv = document.getElementById("chart-alunos-serie");
+        const chartAbsDiv = document.getElementById("chart-alunos-crescimento-abs");
+        const chartPctDiv = document.getElementById("chart-alunos-crescimento-pct");
+        const resumoEl = document.getElementById("resumo-alunos");
 
         function parseCsvLine(line) {
           const out = [];
           let current = "";
           let inQuotes = false;
+
           for (let i = 0; i < line.length; i += 1) {
             const ch = line[i];
             if (ch === '"') {
@@ -240,6 +178,7 @@
           if (lines.length < 2) {
             return [];
           }
+
           const headers = parseCsvLine(lines[0]).map((h) => h.trim());
           return lines.slice(1).map((line) => {
             const cols = parseCsvLine(line);
@@ -254,15 +193,6 @@
         function safeNumber(value) {
           const n = Number(value);
           return Number.isFinite(n) ? n : 0;
-        }
-
-        function escapeHtml(value) {
-          return String(value || "")
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#39;");
         }
 
         function pctChange(start, end) {
@@ -285,43 +215,6 @@
           }
         }
 
-        function setMediaTableMessage(message) {
-          if (mediaTablePeriodoEl) {
-            mediaTablePeriodoEl.textContent = "";
-          }
-          if (mediaTableBodyEl) {
-            mediaTableBodyEl.innerHTML = `<tr><td colspan="4">${escapeHtml(message)}</td></tr>`;
-          }
-        }
-
-        function renderMediaTable(rows, firstYear, lastYear) {
-          if (!mediaTableBodyEl) {
-            return;
-          }
-          if (!rows.length) {
-            setMediaTableMessage("Sem dados para montar a tabela de médias.");
-            return;
-          }
-
-          if (mediaTablePeriodoEl) {
-            mediaTablePeriodoEl.textContent = `Período ${firstYear}–${lastYear}. A Área 45 está destacada.`;
-          }
-
-          mediaTableBodyEl.innerHTML = rows
-            .map((row, idx) => {
-              const rowClass = row.code === "45" ? ' class="area45-row"' : "";
-              return (
-                `<tr${rowClass}>` +
-                `<td>${idx + 1}</td>` +
-                `<td>${escapeHtml(row.label)}</td>` +
-                `<td>${row.total.toLocaleString("pt-BR")}</td>` +
-                `<td>${row.average.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>` +
-                `</tr>`
-              );
-            })
-            .join("");
-        }
-
         function fetchCsvText(url) {
           return fetch(url).then((resp) => {
             if (!resp.ok) {
@@ -336,12 +229,11 @@
           showError(chartSerieDiv, "Plotly não foi carregado.");
           showError(chartAbsDiv, "Plotly não foi carregado.");
           showError(chartPctDiv, "Plotly não foi carregado.");
-          setMediaTableMessage("Plotly não foi carregado.");
           return;
         }
 
-        Promise.all([fetchCsvText(fluxoCsvUrl), fetchCsvText(abreviacoesCsvUrl)])
-          .then(([fluxoCsvText, abreviacoesCsvText]) => {
+        Promise.all([fetchCsvText(alunosCsvUrl), fetchCsvText(abreviacoesCsvUrl)])
+          .then(([alunosCsvText, abreviacoesCsvText]) => {
             const abreviacoesByCode = {};
             parseCsv(abreviacoesCsvText).forEach((row) => {
               const code = String(row.CD_AREA_AVALIACAO || "").trim();
@@ -353,28 +245,26 @@
               }
             });
 
-            const rows = parseCsv(fluxoCsvText)
+            const rows = parseCsv(alunosCsvText)
               .map((row) => ({
                 year: safeNumber(row.AN_BASE),
                 areaCode: String(row.CD_AREA_AVALIACAO || "").trim(),
                 areaName: String(row.NM_AREA_AVALIACAO || "").trim(),
-                entrantsPeople: safeNumber(row.CONTAGEM_INGRESSANTES_ID_PESSOA),
-                entrantsPeopleProgram: safeNumber(row.CONTAGEM_INGRESSOS_ID_PESSOA_PROGRAMA),
+                students: safeNumber(row.CONTAGEM_DISCENTES),
               }))
               .filter(
                 (row) =>
                   row.year > 0 &&
-                  row.year >= minYear &&
+                  yearsAllowed.has(row.year) &&
                   row.areaCode &&
                   row.areaName
               );
 
             if (!rows.length) {
-              setResumo("Não há dados disponíveis para anos a partir de 2013.");
+              setResumo("Não há dados disponíveis para os anos 2016, 2020 e 2024.");
               showError(chartSerieDiv, "CSV sem dados para o gráfico de séries.");
               showError(chartAbsDiv, "CSV sem dados para o comparativo absoluto.");
               showError(chartPctDiv, "CSV sem dados para o comparativo percentual.");
-              setMediaTableMessage("Sem dados para o período selecionado.");
               return;
             }
 
@@ -388,52 +278,28 @@
                 areaStats[row.areaCode] = {
                   code: row.areaCode,
                   name: row.areaName,
-                  byYearPeople: {},
-                  byYearPeopleProgram: {},
+                  byYear: {},
                 };
               }
-              areaStats[row.areaCode].byYearPeople[row.year] = row.entrantsPeople;
-              areaStats[row.areaCode].byYearPeopleProgram[row.year] = row.entrantsPeopleProgram;
+              areaStats[row.areaCode].byYear[row.year] = row.students;
             });
 
             const areaSeriesRows = Object.values(areaStats).map((item) => ({
               code: item.code,
               label: `${abreviacoesByCode[item.code] || item.name} (${item.code})`,
-              seriesPeople: years.map((year) => safeNumber(item.byYearPeople[year])),
-              seriesPeopleProgram: years.map((year) => safeNumber(item.byYearPeopleProgram[year])),
+              series: years.map((year) => safeNumber(item.byYear[year])),
             }));
 
             const area45 = areaSeriesRows.find((row) => row.code === "45");
             if (!area45) {
-              setResumo("A Área 45 não foi encontrada no CSV de ingressantes.");
+              setResumo("A Área 45 não foi encontrada no CSV histórico de discentes.");
               showError(chartSerieDiv, "Área 45 ausente na base.");
               showError(chartAbsDiv, "Área 45 ausente na base.");
               showError(chartPctDiv, "Área 45 ausente na base.");
-              setMediaTableMessage("Área 45 ausente na base.");
               return;
             }
 
-            const mediaRows = areaSeriesRows
-              .map((row) => {
-                const total = row.seriesPeople.reduce((acc, value) => acc + safeNumber(value), 0);
-                const average = years.length ? total / years.length : 0;
-                return {
-                  code: row.code,
-                  label: row.label,
-                  total,
-                  average,
-                };
-              })
-              .sort((a, b) => {
-                if (b.average !== a.average) {
-                  return b.average - a.average;
-                }
-                return a.label.localeCompare(b.label, "pt-BR");
-              });
-
-            renderMediaTable(mediaRows, firstYear, lastYear);
-
-            const y45 = area45.seriesPeople;
+            const y45 = area45.series;
             const start45 = y45[0];
             const end45 = y45[y45.length - 1];
             const mid45 = y45.length > 1 ? y45[Math.floor(y45.length / 2)] : 0;
@@ -442,27 +308,15 @@
 
             const totalByYear = {};
             rows.forEach((row) => {
-              totalByYear[row.year] = (totalByYear[row.year] || 0) + row.entrantsPeople;
+              totalByYear[row.year] = (totalByYear[row.year] || 0) + row.students;
             });
             const shareStart = totalByYear[firstYear] > 0 ? (start45 / totalByYear[firstYear]) * 100 : 0;
             const shareEnd = totalByYear[lastYear] > 0 ? (end45 / totalByYear[lastYear]) * 100 : 0;
-            const avgEntrants45 = y45.length
-              ? y45.reduce((acc, value) => acc + safeNumber(value), 0) / y45.length
-              : 0;
-            const yearSpan = lastYear - firstYear;
-            const avgGrowthAbsPerYear = yearSpan > 0 ? delta45 / yearSpan : null;
-            const avgGrowthPctPerYear =
-              yearSpan > 0 && start45 > 0 && end45 > 0
-                ? (Math.pow(end45 / start45, 1 / yearSpan) - 1) * 100
-                : null;
 
             setResumo(
-              `<strong>Área 45</strong>: ${start45} novos alunos em ${firstYear} → ${end45} em ${lastYear} ` +
+              `<strong>Área 45</strong>: ${start45} alunos em ${firstYear} → ${end45} em ${lastYear} ` +
                 `(<strong>${delta45 >= 0 ? "+" : ""}${delta45}</strong>, ${delta45Pct === null ? "n/d" : `${delta45Pct.toFixed(2)}%`}). ` +
-                `Em 2020: ${mid45}. Participação no total: ${shareStart.toFixed(2)}% → ${shareEnd.toFixed(2)}%. ` +
-                `Média de novos ingressantes/ano: <strong>${avgEntrants45.toFixed(1)}</strong>. ` +
-                `Média de crescimento anual: <strong>${avgGrowthAbsPerYear === null ? "n/d" : `${avgGrowthAbsPerYear >= 0 ? "+" : ""}${avgGrowthAbsPerYear.toFixed(1)}`}</strong> ` +
-                `ingressantes/ano (${avgGrowthPctPerYear === null ? "n/d" : `${avgGrowthPctPerYear.toFixed(2)}% a.a.`}).`
+                `Em 2020: ${mid45}. Participação no total: ${shareStart.toFixed(2)}% → ${shareEnd.toFixed(2)}%.`
             );
 
             areaSeriesRows.sort((a, b) => {
@@ -482,7 +336,7 @@
                 mode: isArea45 ? "lines+markers" : "lines",
                 name: isArea45 ? `Área 45 (${row.label})` : row.label,
                 x: years,
-                y: row.seriesPeople,
+                y: row.series,
                 line: {
                   color: isArea45 ? "rgba(242, 140, 40, 0.98)" : "rgba(10, 98, 148, 0.25)",
                   width: isArea45 ? 3.8 : 1.2,
@@ -492,14 +346,14 @@
                   : { color: "rgba(10, 98, 148, 0.4)", size: 4 },
                 hovertemplate:
                   `<b>${row.label}</b><br>` +
-                  "Ano %{x}<br>Novos alunos (ID): %{y}<extra></extra>",
+                  "Ano %{x}<br>Alunos no sistema: %{y}<extra></extra>",
                 showlegend: isArea45,
               };
             });
 
             const layoutSerie = {
               title: {
-                text: `Novos alunos por área (série anual desde ${firstYear})`,
+                text: "Alunos no sistema por área (2016, 2020 e 2024)",
                 x: 0.5,
                 xanchor: "center",
               },
@@ -512,7 +366,7 @@
                 tickvals: years,
               },
               yaxis: {
-                title: "Novos alunos (ID_PESSOA distintos)",
+                title: "Alunos (ID_PESSOA distintos)",
                 rangemode: "tozero",
               },
               legend: {
@@ -531,8 +385,8 @@
             });
 
             const growthRows = areaSeriesRows.map((row) => {
-              const start = safeNumber(row.seriesPeople[0]);
-              const end = safeNumber(row.seriesPeople[row.seriesPeople.length - 1]);
+              const start = safeNumber(row.series[0]);
+              const end = safeNumber(row.series[row.series.length - 1]);
               const delta = end - start;
               const deltaPct = pctChange(start, end);
               return {
@@ -576,15 +430,15 @@
               customdata: absCustom,
               hovertemplate:
                 "<b>%{y}</b><br>" +
-                `Novos alunos ${firstYear}: %{customdata[0]}<br>` +
-                `Novos alunos ${lastYear}: %{customdata[1]}<br>` +
+                `Alunos ${firstYear}: %{customdata[0]}<br>` +
+                `Alunos ${lastYear}: %{customdata[1]}<br>` +
                 "Variação absoluta: %{x}<br>" +
                 "Variação percentual: %{customdata[2]}<extra></extra>",
             };
 
             const layoutAbs = {
               title: {
-                text: `Variação absoluta de novos alunos por área (${firstYear} → ${lastYear})`,
+                text: `Variação absoluta de alunos por área (${firstYear} → ${lastYear})`,
                 x: 0.5,
                 xanchor: "center",
               },
@@ -593,7 +447,7 @@
               paper_bgcolor: "rgba(0,0,0,0)",
               plot_bgcolor: "rgba(255,255,255,0.6)",
               xaxis: {
-                title: "Variação absoluta (novos alunos)",
+                title: "Variação absoluta (alunos)",
                 zeroline: true,
                 zerolinewidth: 1.5,
                 zerolinecolor: "rgba(10,39,64,0.5)",
@@ -644,15 +498,15 @@
                 customdata: pctCustom,
                 hovertemplate:
                   "<b>%{y}</b><br>" +
-                  `Novos alunos ${firstYear}: %{customdata[0]}<br>` +
-                  `Novos alunos ${lastYear}: %{customdata[1]}<br>` +
+                  `Alunos ${firstYear}: %{customdata[0]}<br>` +
+                  `Alunos ${lastYear}: %{customdata[1]}<br>` +
                   "Variação absoluta: %{customdata[2]}<br>" +
                   "Variação percentual: %{x:.2f}%<extra></extra>",
               };
 
               const layoutPct = {
                 title: {
-                  text: `Variação percentual de novos alunos por área (${firstYear} → ${lastYear})`,
+                  text: `Variação percentual de alunos por área (${firstYear} → ${lastYear})`,
                   x: 0.5,
                   xanchor: "center",
                 },
@@ -661,7 +515,7 @@
                 paper_bgcolor: "rgba(0,0,0,0)",
                 plot_bgcolor: "rgba(255,255,255,0.6)",
                 xaxis: {
-                  title: "Variação percentual (novos alunos)",
+                  title: "Variação percentual (alunos)",
                   ticksuffix: "%",
                   zeroline: true,
                   zerolinewidth: 1.5,
@@ -688,7 +542,6 @@
             showError(chartSerieDiv, message);
             showError(chartAbsDiv, message);
             showError(chartPctDiv, message);
-            setMediaTableMessage(message);
           });
       })();
     </script>

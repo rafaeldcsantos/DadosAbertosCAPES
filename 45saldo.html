@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Área 45 - Fluxo de Egressos (Desde 2013)</title>
+    <title>Área 45 - Saldo Anual de Fluxo Discente (Desde 2013)</title>
     <link rel="icon" type="image/svg+xml" href="./Images/favicon.svg" />
     <link rel="stylesheet" href="./CSS/site.css" />
     <style>
@@ -46,8 +46,8 @@
         margin: 0 auto;
       }
 
-      #chart-fluxo-crescimento-abs,
-      #chart-fluxo-crescimento-pct {
+      #chart-saldo-crescimento-abs,
+      #chart-saldo-crescimento-pct {
         width: min(100%, 1040px);
         min-height: 760px;
         height: auto;
@@ -76,52 +76,52 @@
   </head>
   <body>
     <div class="page" id="page">
-      <p class="page-home-link"><a href="./45_artigo.html">Voltar para a lista de relatórios</a></p>
+      <p class="page-home-link"><a href="./45.html">Voltar para a lista de relatórios</a></p>
 
       <header class="page-header">
-        <h1>Fluxo de egressos na Área 45 (desde 2013)</h1>
-        <p>Série anual de 2013 em diante, usando NM_SITUACAO_DISCENTE = TITULADO (egressos).</p>
+        <h1>Saldo anual de ingressantes e titulados na Área 45 (desde 2013)</h1>
+        <p>Série anual de 2013 em diante, com saldo = ingressantes - titulados.</p>
       </header>
 
       <main class="page-content">
         <section class="tiles-panel">
-          <h2 class="panel-title">Egressos por Ano de Avaliação</h2>
+          <h2 class="panel-title">Saldo por Ano de Avaliação</h2>
           <div class="section-card">
-            <p class="answer-pill" id="resumo-fluxo">Carregando dados...</p>
+            <p class="answer-pill" id="resumo-saldo">Carregando dados...</p>
 
             <h3 class="section-title">Como calcular</h3>
             <p>
-              A base usada é <tt>Data/discentes_egressos_por_ano_area.csv</tt>, gerada a partir de
-              <tt>RawData/br-capes-colsucup-discentes-*.xlsx</tt> com filtro
-              <tt>NM_SITUACAO_DISCENTE = TITULADO (egressos)</tt>.
-              O indicador principal desta página é
-              <tt>CONTAGEM_EGRESSOS_ID_PESSOA</tt> (ID de aluno distinto por ano e área).
+              As bases usadas são <tt>Data/discentes_ingressantes_por_ano_area.csv</tt> e
+              <tt>Data/discentes_titulados_por_ano_area.csv</tt>, geradas a partir de
+              <tt>RawData/br-capes-colsucup-discentes-*.xlsx</tt>.
+              Para cada par <tt>(ano, área)</tt>, aplicamos:
+              <tt>saldo = CONTAGEM_INGRESSANTES_ID_PESSOA - CONTAGEM_TITULADOS_ID_PESSOA</tt>.
             </p>
             <p>
-              Observação: no recorte 2013–2024, egressos são os registros com NM_SITUACAO_DISCENTE = TITULADO.
+              Observação: saldo positivo indica mais ingressantes do que titulados no ano; saldo negativo indica o oposto.
             </p>
 
-            <h3 class="section-title">Séries de egressos por área (Área 45 destacada)</h3>
+            <h3 class="section-title">Séries anuais de saldo por área (Área 45 destacada)</h3>
             <div class="chart-box">
-              <div id="chart-fluxo-serie"></div>
+              <div id="chart-saldo-serie"></div>
               <p class="chart-note">
-                Séries anuais de todas as áreas desde 2013; a Área 45 está destacada em laranja.
+                Séries anuais do saldo desde 2013; a Área 45 está destacada em laranja.
               </p>
             </div>
 
-            <h3 class="section-title">Comparação de crescimento entre áreas (absoluto)</h3>
+            <h3 class="section-title">Comparação de variação de saldo entre áreas (absoluto)</h3>
             <div class="chart-box">
-              <div id="chart-fluxo-crescimento-abs"></div>
+              <div id="chart-saldo-crescimento-abs"></div>
               <p class="chart-note">
-                Variação absoluta de egressos entre o primeiro e o último ano da série. Área 45 em laranja.
+                Variação absoluta do saldo entre o primeiro e o último ano da série. Área 45 em laranja.
               </p>
             </div>
 
-            <h3 class="section-title">Comparação de crescimento entre áreas (percentual)</h3>
+            <h3 class="section-title">Comparação de variação de saldo entre áreas (percentual)</h3>
             <div class="chart-box">
-              <div id="chart-fluxo-crescimento-pct"></div>
+              <div id="chart-saldo-crescimento-pct"></div>
               <p class="chart-note">
-                Variação percentual de egressos entre o primeiro e o último ano da série. Área 45 em laranja.
+                Variação percentual do saldo entre o primeiro e o último ano, exibida para áreas com saldo inicial positivo.
               </p>
             </div>
           </div>
@@ -136,14 +136,15 @@
     <script src="./JS/plotly.min.js"></script>
     <script>
       (function () {
-        const egressosCsvUrl = "./Data/discentes_egressos_por_ano_area.csv";
+        const ingressantesCsvUrl = "./Data/discentes_ingressantes_por_ano_area.csv";
+        const tituladosCsvUrl = "./Data/discentes_titulados_por_ano_area.csv";
         const abreviacoesCsvUrl = "./Data/areas_avaliacao_abreviacoes.csv";
         const minYear = 2013;
 
-        const chartSerieDiv = document.getElementById("chart-fluxo-serie");
-        const chartAbsDiv = document.getElementById("chart-fluxo-crescimento-abs");
-        const chartPctDiv = document.getElementById("chart-fluxo-crescimento-pct");
-        const resumoEl = document.getElementById("resumo-fluxo");
+        const chartSerieDiv = document.getElementById("chart-saldo-serie");
+        const chartAbsDiv = document.getElementById("chart-saldo-crescimento-abs");
+        const chartPctDiv = document.getElementById("chart-saldo-crescimento-pct");
+        const resumoEl = document.getElementById("resumo-saldo");
 
         function parseCsvLine(line) {
           const out = [];
@@ -231,8 +232,8 @@
           return;
         }
 
-        Promise.all([fetchCsvText(egressosCsvUrl), fetchCsvText(abreviacoesCsvUrl)])
-          .then(([egressosCsvText, abreviacoesCsvText]) => {
+        Promise.all([fetchCsvText(ingressantesCsvUrl), fetchCsvText(tituladosCsvUrl), fetchCsvText(abreviacoesCsvUrl)])
+          .then(([ingressantesCsvText, tituladosCsvText, abreviacoesCsvText]) => {
             const abreviacoesByCode = {};
             parseCsv(abreviacoesCsvText).forEach((row) => {
               const code = String(row.CD_AREA_AVALIACAO || "").trim();
@@ -244,95 +245,105 @@
               }
             });
 
-            const rows = parseCsv(egressosCsvText)
+            const ingressRows = parseCsv(ingressantesCsvText)
               .map((row) => ({
                 year: safeNumber(row.AN_BASE),
                 areaCode: String(row.CD_AREA_AVALIACAO || "").trim(),
                 areaName: String(row.NM_AREA_AVALIACAO || "").trim(),
-                egressosPeople: safeNumber(row.CONTAGEM_EGRESSOS_ID_PESSOA),
-                egressosPeopleProgram: safeNumber(row.CONTAGEM_EGRESSOS_ID_PESSOA_PROGRAMA),
+                count: safeNumber(row.CONTAGEM_INGRESSANTES_ID_PESSOA),
               }))
-              .filter(
-                (row) =>
-                  row.year > 0 &&
-                  row.year >= minYear &&
-                  row.areaCode &&
-                  row.areaName
-              );
+              .filter((row) => row.year >= minYear && row.areaCode && row.areaName);
 
-            if (!rows.length) {
-              setResumo("Não há dados disponíveis para anos a partir de 2013.");
+            const tituladosRows = parseCsv(tituladosCsvText)
+              .map((row) => ({
+                year: safeNumber(row.AN_BASE),
+                areaCode: String(row.CD_AREA_AVALIACAO || "").trim(),
+                areaName: String(row.NM_AREA_AVALIACAO || "").trim(),
+                count: safeNumber(row.CONTAGEM_TITULADOS_ID_PESSOA),
+              }))
+              .filter((row) => row.year >= minYear && row.areaCode && row.areaName);
+
+            if (!ingressRows.length || !tituladosRows.length) {
+              setResumo("Não há dados suficientes para calcular saldo desde 2013.");
               showError(chartSerieDiv, "CSV sem dados para o gráfico de séries.");
               showError(chartAbsDiv, "CSV sem dados para o comparativo absoluto.");
               showError(chartPctDiv, "CSV sem dados para o comparativo percentual.");
               return;
             }
 
-            const years = Array.from(new Set(rows.map((row) => row.year))).sort((a, b) => a - b);
-            const firstYear = years[0];
-            const lastYear = years[years.length - 1];
+            const ingressYears = new Set(ingressRows.map((row) => row.year));
+            const tituladosYears = new Set(tituladosRows.map((row) => row.year));
+            const years = Array.from(ingressYears)
+              .filter((year) => tituladosYears.has(year))
+              .sort((a, b) => a - b);
 
-            const areaStats = {};
-            rows.forEach((row) => {
-              if (!areaStats[row.areaCode]) {
-                areaStats[row.areaCode] = {
-                  code: row.areaCode,
-                  name: row.areaName,
-                  byYearPeople: {},
-                  byYearPeopleProgram: {},
-                };
-              }
-              areaStats[row.areaCode].byYearPeople[row.year] = row.egressosPeople;
-              areaStats[row.areaCode].byYearPeopleProgram[row.year] = row.egressosPeopleProgram;
+            if (!years.length) {
+              setResumo("Não há interseção de anos entre as bases de ingressantes e titulados.");
+              showError(chartSerieDiv, "Sem anos comuns para montar a série.");
+              showError(chartAbsDiv, "Sem anos comuns para o comparativo.");
+              showError(chartPctDiv, "Sem anos comuns para o comparativo.");
+              return;
+            }
+
+            const ingressByKey = new Map();
+            const tituladosByKey = new Map();
+            const areaNameByCode = {};
+
+            ingressRows.forEach((row) => {
+              const key = `${row.year}|${row.areaCode}`;
+              ingressByKey.set(key, row.count);
+              areaNameByCode[row.areaCode] = areaNameByCode[row.areaCode] || row.areaName;
             });
 
-            const areaSeriesRows = Object.values(areaStats).map((item) => ({
-              code: item.code,
-              label: `${abreviacoesByCode[item.code] || item.name} (${item.code})`,
-              seriesPeople: years.map((year) => safeNumber(item.byYearPeople[year])),
-              seriesPeopleProgram: years.map((year) => safeNumber(item.byYearPeopleProgram[year])),
-            }));
+            tituladosRows.forEach((row) => {
+              const key = `${row.year}|${row.areaCode}`;
+              tituladosByKey.set(key, row.count);
+              areaNameByCode[row.areaCode] = areaNameByCode[row.areaCode] || row.areaName;
+            });
+
+            const areaCodes = Array.from(
+              new Set([
+                ...ingressRows.map((row) => row.areaCode),
+                ...tituladosRows.map((row) => row.areaCode),
+              ])
+            );
+
+            const areaSeriesRows = areaCodes.map((code) => {
+              const areaName = areaNameByCode[code] || code;
+              const seriesIngress = years.map((year) => safeNumber(ingressByKey.get(`${year}|${code}`)));
+              const seriesTitulados = years.map((year) => safeNumber(tituladosByKey.get(`${year}|${code}`)));
+              const seriesSaldo = seriesIngress.map((value, idx) => value - seriesTitulados[idx]);
+              return {
+                code,
+                label: `${abreviacoesByCode[code] || areaName} (${code})`,
+                seriesIngress,
+                seriesTitulados,
+                seriesSaldo,
+              };
+            });
 
             const area45 = areaSeriesRows.find((row) => row.code === "45");
             if (!area45) {
-              setResumo("A Área 45 não foi encontrada no CSV de egressos.");
+              setResumo("A Área 45 não foi encontrada nas bases para cálculo de saldo.");
               showError(chartSerieDiv, "Área 45 ausente na base.");
               showError(chartAbsDiv, "Área 45 ausente na base.");
               showError(chartPctDiv, "Área 45 ausente na base.");
               return;
             }
 
-            const y45 = area45.seriesPeople;
+            const firstYear = years[0];
+            const lastYear = years[years.length - 1];
+            const y45 = area45.seriesSaldo;
             const start45 = y45[0];
             const end45 = y45[y45.length - 1];
-            const midIdx = y45.length > 1 ? Math.floor(y45.length / 2) : 0;
-            const midYear = years[midIdx];
-            const mid45 = y45[midIdx];
+            const mid45 = y45.length > 1 ? y45[Math.floor(y45.length / 2)] : 0;
             const delta45 = end45 - start45;
             const delta45Pct = pctChange(start45, end45);
 
-            const totalByYear = {};
-            rows.forEach((row) => {
-              totalByYear[row.year] = (totalByYear[row.year] || 0) + row.egressosPeople;
-            });
-            const shareStart = totalByYear[firstYear] > 0 ? (start45 / totalByYear[firstYear]) * 100 : 0;
-            const shareEnd = totalByYear[lastYear] > 0 ? (end45 / totalByYear[lastYear]) * 100 : 0;
-            const totalTitulados45Period = y45.reduce((acc, value) => acc + safeNumber(value), 0);
-            const area45ByYear = {};
-            years.forEach((year, idx) => {
-              area45ByYear[year] = safeNumber(y45[idx]);
-            });
-            const egressos2017a2020 = [2017, 2018, 2019, 2020].reduce(
-              (acc, year) => acc + safeNumber(area45ByYear[year]),
-              0
-            );
-            const egressos2021a2024 = [2021, 2022, 2023, 2024].reduce(
-              (acc, year) => acc + safeNumber(area45ByYear[year]),
-              0
-            );
-            const avgEgressos45 = y45.length
-              ? y45.reduce((acc, value) => acc + safeNumber(value), 0) / y45.length
-              : 0;
+            const totalIngress45 = area45.seriesIngress.reduce((acc, value) => acc + safeNumber(value), 0);
+            const totalTitulados45 = area45.seriesTitulados.reduce((acc, value) => acc + safeNumber(value), 0);
+            const totalSaldo45 = y45.reduce((acc, value) => acc + safeNumber(value), 0);
+            const avgSaldo45 = y45.length ? totalSaldo45 / y45.length : 0;
             const yearSpan = lastYear - firstYear;
             const avgGrowthAbsPerYear = yearSpan > 0 ? delta45 / yearSpan : null;
             const avgGrowthPctPerYear =
@@ -341,15 +352,14 @@
                 : null;
 
             setResumo(
-              `<strong>Área 45</strong>: ${start45} egressos em ${firstYear} → ${end45} em ${lastYear} ` +
+              `<strong>Área 45</strong>: saldo de ${start45} em ${firstYear} → ${end45} em ${lastYear} ` +
                 `(<strong>${delta45 >= 0 ? "+" : ""}${delta45}</strong>, ${delta45Pct === null ? "n/d" : `${delta45Pct.toFixed(2)}%`}). ` +
-                `No ano intermediário (${midYear}): ${mid45}. Participação no total: ${shareStart.toFixed(2)}% → ${shareEnd.toFixed(2)}%. ` +
-                `Total de egressos no período com registro (${firstYear}–${lastYear}): <strong>${totalTitulados45Period}</strong>. ` +
-                `Egressos por período de avaliação: <strong>2017–2020 = ${egressos2017a2020}</strong> e ` +
-                `<strong>2021–2024 = ${egressos2021a2024}</strong>. ` +
-                `Média de egressos/ano: <strong>${avgEgressos45.toFixed(1)}</strong>. ` +
-                `Média de crescimento anual: <strong>${avgGrowthAbsPerYear === null ? "n/d" : `${avgGrowthAbsPerYear >= 0 ? "+" : ""}${avgGrowthAbsPerYear.toFixed(1)}`}</strong> ` +
-                `egressos/ano (${avgGrowthPctPerYear === null ? "n/d" : `${avgGrowthPctPerYear.toFixed(2)}% a.a.`}).`
+                `Em 2020: ${mid45}. Total no período (${firstYear}–${lastYear}): ` +
+                `<strong>ingressantes = ${totalIngress45}</strong>, <strong>titulados = ${totalTitulados45}</strong>, ` +
+                `<strong>saldo acumulado = ${totalSaldo45}</strong>. ` +
+                `Média de saldo/ano: <strong>${avgSaldo45.toFixed(1)}</strong>. ` +
+                `Média de variação anual: <strong>${avgGrowthAbsPerYear === null ? "n/d" : `${avgGrowthAbsPerYear >= 0 ? "+" : ""}${avgGrowthAbsPerYear.toFixed(1)}`}</strong> ` +
+                `(${avgGrowthPctPerYear === null ? "n/d" : `${avgGrowthPctPerYear.toFixed(2)}% a.a.`}).`
             );
 
             areaSeriesRows.sort((a, b) => {
@@ -364,12 +374,17 @@
 
             const tracesSerie = areaSeriesRows.map((row) => {
               const isArea45 = row.code === "45";
+              const customData = row.seriesIngress.map((ingress, idx) => [
+                ingress,
+                row.seriesTitulados[idx],
+              ]);
               return {
                 type: "scatter",
                 mode: isArea45 ? "lines+markers" : "lines",
                 name: isArea45 ? `Área 45 (${row.label})` : row.label,
                 x: years,
-                y: row.seriesPeople,
+                y: row.seriesSaldo,
+                customdata: customData,
                 line: {
                   color: isArea45 ? "rgba(242, 140, 40, 0.98)" : "rgba(10, 98, 148, 0.25)",
                   width: isArea45 ? 3.8 : 1.2,
@@ -379,14 +394,14 @@
                   : { color: "rgba(10, 98, 148, 0.4)", size: 4 },
                 hovertemplate:
                   `<b>${row.label}</b><br>` +
-                  "Ano %{x}<br>Egressos (ID): %{y}<extra></extra>",
+                  "Ano %{x}<br>Ingressantes: %{customdata[0]}<br>Titulados: %{customdata[1]}<br>Saldo: %{y}<extra></extra>",
                 showlegend: isArea45,
               };
             });
 
             const layoutSerie = {
               title: {
-                text: `Egressos por área (série anual desde ${firstYear})`,
+                text: `Saldo anual por área (série desde ${firstYear})`,
                 x: 0.5,
                 xanchor: "center",
               },
@@ -399,8 +414,11 @@
                 tickvals: years,
               },
               yaxis: {
-                title: "Egressos (ID_PESSOA distintos)",
+                title: "Saldo (ingressantes - titulados)",
                 rangemode: "tozero",
+                zeroline: true,
+                zerolinewidth: 1.5,
+                zerolinecolor: "rgba(10,39,64,0.5)",
               },
               legend: {
                 orientation: "h",
@@ -418,8 +436,8 @@
             });
 
             const growthRows = areaSeriesRows.map((row) => {
-              const start = safeNumber(row.seriesPeople[0]);
-              const end = safeNumber(row.seriesPeople[row.seriesPeople.length - 1]);
+              const start = safeNumber(row.seriesSaldo[0]);
+              const end = safeNumber(row.seriesSaldo[row.seriesSaldo.length - 1]);
               const delta = end - start;
               const deltaPct = pctChange(start, end);
               return {
@@ -463,15 +481,15 @@
               customdata: absCustom,
               hovertemplate:
                 "<b>%{y}</b><br>" +
-                `Egressos ${firstYear}: %{customdata[0]}<br>` +
-                `Egressos ${lastYear}: %{customdata[1]}<br>` +
+                `Saldo ${firstYear}: %{customdata[0]}<br>` +
+                `Saldo ${lastYear}: %{customdata[1]}<br>` +
                 "Variação absoluta: %{x}<br>" +
                 "Variação percentual: %{customdata[2]}<extra></extra>",
             };
 
             const layoutAbs = {
               title: {
-                text: `Variação absoluta de egressos por área (${firstYear} → ${lastYear})`,
+                text: `Variação absoluta do saldo por área (${firstYear} → ${lastYear})`,
                 x: 0.5,
                 xanchor: "center",
               },
@@ -480,7 +498,7 @@
               paper_bgcolor: "rgba(0,0,0,0)",
               plot_bgcolor: "rgba(255,255,255,0.6)",
               xaxis: {
-                title: "Variação absoluta (egressos)",
+                title: "Variação absoluta do saldo",
                 zeroline: true,
                 zerolinewidth: 1.5,
                 zerolinecolor: "rgba(10,39,64,0.5)",
@@ -509,7 +527,7 @@
               });
 
             if (!growthRowsPct.length) {
-              showError(chartPctDiv, "Não há dados suficientes para calcular variação percentual.");
+              showError(chartPctDiv, "Não há áreas com saldo inicial positivo para calcular variação percentual.");
             } else {
               const dynamicPctHeight = Math.max(760, 180 + growthRowsPct.length * 22);
               const pctLabels = growthRowsPct.map((row) => row.label);
@@ -531,15 +549,15 @@
                 customdata: pctCustom,
                 hovertemplate:
                   "<b>%{y}</b><br>" +
-                  `Egressos ${firstYear}: %{customdata[0]}<br>` +
-                  `Egressos ${lastYear}: %{customdata[1]}<br>` +
+                  `Saldo ${firstYear}: %{customdata[0]}<br>` +
+                  `Saldo ${lastYear}: %{customdata[1]}<br>` +
                   "Variação absoluta: %{customdata[2]}<br>" +
                   "Variação percentual: %{x:.2f}%<extra></extra>",
               };
 
               const layoutPct = {
                 title: {
-                  text: `Variação percentual de egressos por área (${firstYear} → ${lastYear})`,
+                  text: `Variação percentual do saldo por área (${firstYear} → ${lastYear})`,
                   x: 0.5,
                   xanchor: "center",
                 },
@@ -548,7 +566,7 @@
                 paper_bgcolor: "rgba(0,0,0,0)",
                 plot_bgcolor: "rgba(255,255,255,0.6)",
                 xaxis: {
-                  title: "Variação percentual (egressos)",
+                  title: "Variação percentual do saldo",
                   ticksuffix: "%",
                   zeroline: true,
                   zerolinewidth: 1.5,

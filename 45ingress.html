@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Área 45 - Fluxo de Novos Alunos (Quadrienais)</title>
+    <title>Área 45 - Fluxo de Novos Alunos (Desde 2013)</title>
     <link rel="icon" type="image/svg+xml" href="./Images/favicon.svg" />
     <link rel="stylesheet" href="./CSS/site.css" />
     <style>
@@ -72,15 +72,52 @@
       .answer-pill strong {
         color: #08547f;
       }
+
+      .table-box {
+        border: 1px dashed rgba(13, 125, 189, 0.4);
+        border-radius: 8px;
+        background: rgba(245, 249, 255, 0.9);
+        padding: 10px;
+        margin-bottom: 10px;
+      }
+
+      .table-scroll {
+        overflow-x: auto;
+      }
+
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+        background: rgba(255, 255, 255, 0.95);
+      }
+
+      .data-table th,
+      .data-table td {
+        border: 1px solid rgba(13, 125, 189, 0.22);
+        padding: 8px 10px;
+        text-align: left;
+        white-space: nowrap;
+      }
+
+      .data-table thead th {
+        background: rgba(13, 125, 189, 0.14);
+        color: #08547f;
+      }
+
+      .data-table tbody tr.area45-row td {
+        background: rgba(242, 140, 40, 0.16);
+        font-weight: 600;
+      }
     </style>
   </head>
   <body>
     <div class="page" id="page">
-      <p class="page-home-link"><a href="./45_artigo.html">Voltar para a lista de relatórios</a></p>
+      <p class="page-home-link"><a href="./45.html">Voltar para a lista de relatórios</a></p>
 
       <header class="page-header">
-        <h1>Fluxo de novos alunos na Área 45 (anos quadrienais)</h1>
-        <p>Recorte em 2016, 2020 e 2024, usando ST_INGRESSANTE = SIM.</p>
+        <h1>Fluxo de novos alunos na Área 45 (desde 2013)</h1>
+        <p>Série anual de 2013 em diante, usando ST_INGRESSANTE = SIM.</p>
       </header>
 
       <main class="page-content">
@@ -106,7 +143,7 @@
             <div class="chart-box">
               <div id="chart-fluxo-serie"></div>
               <p class="chart-note">
-                Séries de todas as áreas em 2016, 2020 e 2024; a Área 45 está destacada em laranja.
+                Séries anuais de todas as áreas desde 2013; a Área 45 está destacada em laranja.
               </p>
             </div>
 
@@ -114,7 +151,7 @@
             <div class="chart-box">
               <div id="chart-fluxo-crescimento-abs"></div>
               <p class="chart-note">
-                Variação absoluta de novos alunos entre 2016 e 2024. Área 45 em laranja.
+                Variação absoluta de novos alunos entre o primeiro e o último ano da série. Área 45 em laranja.
               </p>
             </div>
 
@@ -122,8 +159,30 @@
             <div class="chart-box">
               <div id="chart-fluxo-crescimento-pct"></div>
               <p class="chart-note">
-                Variação percentual de novos alunos entre 2016 e 2024. Área 45 em laranja.
+                Variação percentual de novos alunos entre o primeiro e o último ano da série. Área 45 em laranja.
               </p>
+            </div>
+
+            <h3 class="section-title">Média de novos ingressantes/ano por área</h3>
+            <div class="table-box">
+              <p class="chart-note" id="tabela-media-ingressantes-periodo">Carregando tabela...</p>
+              <div class="table-scroll">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Posição</th>
+                      <th>Área</th>
+                      <th>Total no período</th>
+                      <th>Média de novos ingressantes/ano</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tabela-media-ingressantes-body">
+                    <tr>
+                      <td colspan="4">Carregando dados...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </section>
@@ -139,12 +198,14 @@
       (function () {
         const fluxoCsvUrl = "./Data/discentes_ingressantes_por_ano_area.csv";
         const abreviacoesCsvUrl = "./Data/areas_avaliacao_abreviacoes.csv";
-        const yearsAllowed = new Set([2016, 2020, 2024]);
+        const minYear = 2013;
 
         const chartSerieDiv = document.getElementById("chart-fluxo-serie");
         const chartAbsDiv = document.getElementById("chart-fluxo-crescimento-abs");
         const chartPctDiv = document.getElementById("chart-fluxo-crescimento-pct");
         const resumoEl = document.getElementById("resumo-fluxo");
+        const mediaTableBodyEl = document.getElementById("tabela-media-ingressantes-body");
+        const mediaTablePeriodoEl = document.getElementById("tabela-media-ingressantes-periodo");
 
         function parseCsvLine(line) {
           const out = [];
@@ -195,6 +256,15 @@
           return Number.isFinite(n) ? n : 0;
         }
 
+        function escapeHtml(value) {
+          return String(value || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+        }
+
         function pctChange(start, end) {
           if (!Number.isFinite(start) || start <= 0) {
             return null;
@@ -215,6 +285,43 @@
           }
         }
 
+        function setMediaTableMessage(message) {
+          if (mediaTablePeriodoEl) {
+            mediaTablePeriodoEl.textContent = "";
+          }
+          if (mediaTableBodyEl) {
+            mediaTableBodyEl.innerHTML = `<tr><td colspan="4">${escapeHtml(message)}</td></tr>`;
+          }
+        }
+
+        function renderMediaTable(rows, firstYear, lastYear) {
+          if (!mediaTableBodyEl) {
+            return;
+          }
+          if (!rows.length) {
+            setMediaTableMessage("Sem dados para montar a tabela de médias.");
+            return;
+          }
+
+          if (mediaTablePeriodoEl) {
+            mediaTablePeriodoEl.textContent = `Período ${firstYear}–${lastYear}. A Área 45 está destacada.`;
+          }
+
+          mediaTableBodyEl.innerHTML = rows
+            .map((row, idx) => {
+              const rowClass = row.code === "45" ? ' class="area45-row"' : "";
+              return (
+                `<tr${rowClass}>` +
+                `<td>${idx + 1}</td>` +
+                `<td>${escapeHtml(row.label)}</td>` +
+                `<td>${row.total.toLocaleString("pt-BR")}</td>` +
+                `<td>${row.average.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>` +
+                `</tr>`
+              );
+            })
+            .join("");
+        }
+
         function fetchCsvText(url) {
           return fetch(url).then((resp) => {
             if (!resp.ok) {
@@ -229,6 +336,7 @@
           showError(chartSerieDiv, "Plotly não foi carregado.");
           showError(chartAbsDiv, "Plotly não foi carregado.");
           showError(chartPctDiv, "Plotly não foi carregado.");
+          setMediaTableMessage("Plotly não foi carregado.");
           return;
         }
 
@@ -256,16 +364,17 @@
               .filter(
                 (row) =>
                   row.year > 0 &&
-                  yearsAllowed.has(row.year) &&
+                  row.year >= minYear &&
                   row.areaCode &&
                   row.areaName
               );
 
             if (!rows.length) {
-              setResumo("Não há dados disponíveis para os anos 2016, 2020 e 2024.");
+              setResumo("Não há dados disponíveis para anos a partir de 2013.");
               showError(chartSerieDiv, "CSV sem dados para o gráfico de séries.");
               showError(chartAbsDiv, "CSV sem dados para o comparativo absoluto.");
               showError(chartPctDiv, "CSV sem dados para o comparativo percentual.");
+              setMediaTableMessage("Sem dados para o período selecionado.");
               return;
             }
 
@@ -300,8 +409,29 @@
               showError(chartSerieDiv, "Área 45 ausente na base.");
               showError(chartAbsDiv, "Área 45 ausente na base.");
               showError(chartPctDiv, "Área 45 ausente na base.");
+              setMediaTableMessage("Área 45 ausente na base.");
               return;
             }
+
+            const mediaRows = areaSeriesRows
+              .map((row) => {
+                const total = row.seriesPeople.reduce((acc, value) => acc + safeNumber(value), 0);
+                const average = years.length ? total / years.length : 0;
+                return {
+                  code: row.code,
+                  label: row.label,
+                  total,
+                  average,
+                };
+              })
+              .sort((a, b) => {
+                if (b.average !== a.average) {
+                  return b.average - a.average;
+                }
+                return a.label.localeCompare(b.label, "pt-BR");
+              });
+
+            renderMediaTable(mediaRows, firstYear, lastYear);
 
             const y45 = area45.seriesPeople;
             const start45 = y45[0];
@@ -316,11 +446,23 @@
             });
             const shareStart = totalByYear[firstYear] > 0 ? (start45 / totalByYear[firstYear]) * 100 : 0;
             const shareEnd = totalByYear[lastYear] > 0 ? (end45 / totalByYear[lastYear]) * 100 : 0;
+            const avgEntrants45 = y45.length
+              ? y45.reduce((acc, value) => acc + safeNumber(value), 0) / y45.length
+              : 0;
+            const yearSpan = lastYear - firstYear;
+            const avgGrowthAbsPerYear = yearSpan > 0 ? delta45 / yearSpan : null;
+            const avgGrowthPctPerYear =
+              yearSpan > 0 && start45 > 0 && end45 > 0
+                ? (Math.pow(end45 / start45, 1 / yearSpan) - 1) * 100
+                : null;
 
             setResumo(
               `<strong>Área 45</strong>: ${start45} novos alunos em ${firstYear} → ${end45} em ${lastYear} ` +
                 `(<strong>${delta45 >= 0 ? "+" : ""}${delta45}</strong>, ${delta45Pct === null ? "n/d" : `${delta45Pct.toFixed(2)}%`}). ` +
-                `Em 2020: ${mid45}. Participação no total: ${shareStart.toFixed(2)}% → ${shareEnd.toFixed(2)}%.`
+                `Em 2020: ${mid45}. Participação no total: ${shareStart.toFixed(2)}% → ${shareEnd.toFixed(2)}%. ` +
+                `Média de novos ingressantes/ano: <strong>${avgEntrants45.toFixed(1)}</strong>. ` +
+                `Média de crescimento anual: <strong>${avgGrowthAbsPerYear === null ? "n/d" : `${avgGrowthAbsPerYear >= 0 ? "+" : ""}${avgGrowthAbsPerYear.toFixed(1)}`}</strong> ` +
+                `ingressantes/ano (${avgGrowthPctPerYear === null ? "n/d" : `${avgGrowthPctPerYear.toFixed(2)}% a.a.`}).`
             );
 
             areaSeriesRows.sort((a, b) => {
@@ -357,7 +499,7 @@
 
             const layoutSerie = {
               title: {
-                text: "Novos alunos por área (2016, 2020 e 2024)",
+                text: `Novos alunos por área (série anual desde ${firstYear})`,
                 x: 0.5,
                 xanchor: "center",
               },
@@ -546,6 +688,7 @@
             showError(chartSerieDiv, message);
             showError(chartAbsDiv, message);
             showError(chartPctDiv, message);
+            setMediaTableMessage(message);
           });
       })();
     </script>
