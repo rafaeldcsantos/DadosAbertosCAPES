@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Área 45 - Série Recriada de Egressos (1999-2024)</title>
+    <link rel="icon" type="image/svg+xml" href="./Images/favicon.svg" />
+    <link rel="stylesheet" href="./CSS/site.css" />
+    <style>
+      .section-card {
+        border: 1px solid rgba(13, 125, 189, 0.28);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 14px;
+      }
+
+      .section-title {
+        margin: 0 0 8px;
+        color: #08547f;
+        font-size: 1rem;
+      }
+
+      .section-card p,
+      .section-card ul,
+      .section-card ol {
+        margin: 0 0 10px;
+      }
+
+      .chart-box {
+        border: 1px dashed rgba(13, 125, 189, 0.4);
+        border-radius: 8px;
+        background: rgba(245, 249, 255, 0.9);
+        min-height: 280px;
+        padding: 10px;
+        margin-bottom: 10px;
+      }
+
+      :root {
+        --chart-max-width: 960px;
+      }
+
+      .chart-box [id^="chart-"] {
+        width: min(100%, var(--chart-max-width));
+        aspect-ratio: 4 / 3;
+        height: auto;
+        margin: 0 auto;
+      }
+
+      .chart-note {
+        margin-top: 8px;
+        font-size: 0.84rem;
+        color: rgba(10, 39, 64, 0.78);
+      }
+
+      .answer-pill {
+        margin: 0 0 12px;
+        border: 1px solid rgba(13, 125, 189, 0.35);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.96);
+        padding: 10px 12px;
+        color: rgba(10, 39, 64, 0.95);
+      }
+
+      .answer-pill strong {
+        color: #08547f;
+      }
+
+      .method-code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+        font-size: 0.9em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page" id="page">
+      <p class="page-home-link"><a href="./45.html">Voltar para a lista de relatórios</a></p>
+
+      <header class="page-header">
+        <h1>Série recriada de egressos da Área 45 (1999-2024)</h1>
+        <p>
+          Série anual construída com duas fontes: proxy por teses/dissertações para 1999-2003 e série observada de
+          egressos em discentes para 2004-2024.
+        </p>
+      </header>
+
+      <main class="page-content">
+        <section class="tiles-panel">
+          <h2 class="panel-title">Síntese</h2>
+          <div class="section-card">
+            <p class="answer-pill" id="resumo-estimativa">Carregando dados...</p>
+
+            <h3 class="section-title">Metodologia (conservadora com base histórica)</h3>
+            <ol>
+              <li>
+                Proxy histórico: em cada arquivo <tt>RawData/Teses/dados_YYYY.xlsx</tt>, contar registros com
+                <tt>AreaAvaliacao = INTERDISCIPLINAR</tt> (1999-2012).
+              </li>
+              <li>
+                Sobreposição para calibração: comparar o proxy com <tt>Data/discentes_egressos_por_ano_area_desde2004.csv</tt>
+                (Área 45) em 2004-2012.
+              </li>
+              <li>
+                Razão anual de calibração: <span class="method-code">ratio = egressos_discentes / teses_interdisciplinar</span>.
+              </li>
+              <li>
+                Tratamento robusto: marcar outlier por IQR (2010) e removê-lo do cálculo do fator.
+              </li>
+              <li>
+                Fator conservador aplicado em 1999-2003: mínimo dos anos não-outlier
+                <span class="method-code">f = min(ratio_limpo) = 0,970722</span>.
+              </li>
+              <li>
+                Série final: <tt>EGRESSOS_RECONSTRUIDOS = floor(TESES_INTERDISCIPLINAR * f)</tt> para 1999-2003;
+                2004-2024 mantido como observado em discentes.
+              </li>
+            </ol>
+            <h3 class="section-title">Como os dados foram coletados e analisados</h3>
+            <p>
+              1) Para cada ano de 1999 a 2012, foi aberto o arquivo <tt>RawData/Teses/dados_YYYY.xlsx</tt> e lida a planilha
+              principal (<tt>dados_YYYY</tt>) em modo somente leitura, para reduzir custo de memória.
+            </p>
+            <p>
+              2) Nessas planilhas, foi usada a coluna <tt>AreaAvaliacao</tt>. A contagem anual do proxy foi feita com
+              correspondência exata <tt>AreaAvaliacao = INTERDISCIPLINAR</tt>. Isso gera a série bruta histórica
+              (teses/dissertações) para a área.
+            </p>
+            <p>
+              3) Em seguida, foi feita a sobreposição com a série de referência
+              <tt>Data/discentes_egressos_por_ano_area_desde2004.csv</tt> para os anos 2004-2012 (onde ambas as fontes
+              coexistem). Para cada ano, foi calculado
+              <span class="method-code">ratio = egressos_discentes / teses_interdisciplinar</span>.
+            </p>
+            <p>
+              4) Os ratios anuais passaram por triagem robusta com IQR para detectar anomalias; 2010 foi marcado como
+              outlier e removido da base de calibração.
+            </p>
+            <p>
+              5) O fator aplicado na reconstrução foi deliberadamente conservador: o menor ratio entre anos limpos
+              (<tt>f = 0,970722</tt>). Com isso, 1999-2003 foi estimado por
+              <span class="method-code">floor(proxy_teses * f)</span>, evitando superestimação.
+            </p>
+            <p>
+              6) A série final 1999-2024 mantém os valores observados de 2004-2024 sem suavização e usa estimativa apenas
+              em 1999-2003. Os arquivos derivados gerados para auditoria são:
+              <tt>Data/egressos_area45_reconstruido_1999_2024.csv</tt> e
+              <tt>Data/egressos_area45_teses_overlap_2004_2012.csv</tt>.
+            </p>
+            <p>
+              Arquivos usados nesta página: <tt>Data/egressos_area45_reconstruido_1999_2024.csv</tt> e
+              <tt>Data/egressos_area45_teses_overlap_2004_2012.csv</tt>.
+            </p>
+
+            <h3 class="section-title">Série final 1999-2024 (recriada + observada)</h3>
+            <div class="chart-box">
+              <div id="chart-serie-final"></div>
+              <p class="chart-note">
+                Laranja: estimativa baseada na base histórica de teses (1999-2003). Azul: egressos observados em discentes (2004-2024).
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <footer class="site-footnote">
+      <a href="http://linktr.ee/rafaeldcsantos">Rafael Santos</a>
+    </footer>
+
+    <script src="./JS/plotly.min.js"></script>
+    <script>
+      (function () {
+        const serieCsvUrl = "./Data/egressos_area45_reconstruido_1999_2024.csv";
+        const overlapCsvUrl = "./Data/egressos_area45_teses_overlap_2004_2012.csv";
+
+        const chartSerieDiv = document.getElementById("chart-serie-final");
+        const resumoEl = document.getElementById("resumo-estimativa");
+
+        function parseCsvLine(line) {
+          const out = [];
+          let current = "";
+          let inQuotes = false;
+          for (let i = 0; i < line.length; i += 1) {
+            const ch = line[i];
+            if (ch === '"') {
+              if (inQuotes && line[i + 1] === '"') {
+                current += '"';
+                i += 1;
+              } else {
+                inQuotes = !inQuotes;
+              }
+              continue;
+            }
+            if (ch === "," && !inQuotes) {
+              out.push(current);
+              current = "";
+              continue;
+            }
+            current += ch;
+          }
+          out.push(current);
+          return out;
+        }
+
+        function parseCsv(text) {
+          const lines = String(text || "")
+            .split(/\r?\n/)
+            .filter((line) => line.trim().length > 0);
+          if (lines.length < 2) {
+            return [];
+          }
+          const headers = parseCsvLine(lines[0]).map((h) => h.trim());
+          return lines.slice(1).map((line) => {
+            const cols = parseCsvLine(line);
+            const row = {};
+            headers.forEach((header, idx) => {
+              row[header] = (cols[idx] || "").trim();
+            });
+            return row;
+          });
+        }
+
+        function safeNumber(value) {
+          const n = Number(value);
+          return Number.isFinite(n) ? n : 0;
+        }
+
+        function asNullableNumber(value) {
+          const raw = String(value ?? "").trim();
+          if (!raw) {
+            return null;
+          }
+          const n = Number(raw);
+          return Number.isFinite(n) ? n : null;
+        }
+
+        function toPtInt(value) {
+          return Math.round(safeNumber(value)).toLocaleString("pt-BR");
+        }
+
+        function toPtFixed(value, digits) {
+          return safeNumber(value).toLocaleString("pt-BR", {
+            minimumFractionDigits: digits,
+            maximumFractionDigits: digits,
+          });
+        }
+
+        function showError(target, message) {
+          if (!target) {
+            return;
+          }
+          target.innerHTML = `<p>${message}</p>`;
+        }
+
+        function setResumo(message) {
+          if (resumoEl) {
+            resumoEl.innerHTML = message;
+          }
+        }
+
+        function fetchCsvText(url) {
+          return fetch(url).then((resp) => {
+            if (!resp.ok) {
+              throw new Error(`Falha ao carregar CSV: HTTP ${resp.status} (${url})`);
+            }
+            return resp.text();
+          });
+        }
+
+        if (typeof Plotly === "undefined") {
+          setResumo("Falha: biblioteca Plotly não carregada.");
+          showError(chartSerieDiv, "Plotly não foi carregado.");
+          return;
+        }
+
+        Promise.all([fetchCsvText(serieCsvUrl), fetchCsvText(overlapCsvUrl)])
+          .then(([serieCsvText, overlapCsvText]) => {
+            const serieRows = parseCsv(serieCsvText)
+              .map((row) => ({
+                ano: safeNumber(row.ANO),
+                egressos: safeNumber(row.EGRESSOS_RECONSTRUIDOS),
+                fonte: String(row.FONTE_FINAL || "").trim(),
+                tesesBruto: asNullableNumber(row.TESES_INTERDISCIPLINAR_BRUTO),
+                fator: asNullableNumber(row.FATOR_CALIBRACAO_APLICADO),
+                observado: asNullableNumber(row.EGRESSOS_DISCENTES_OBSERVADO),
+              }))
+              .filter((row) => row.ano > 0)
+              .sort((a, b) => a.ano - b.ano);
+
+            const overlapRows = parseCsv(overlapCsvText)
+              .map((row) => ({
+                ano: safeNumber(row.ANO),
+                teses: safeNumber(row.TESES_INTERDISCIPLINAR),
+                discentes: safeNumber(row.EGRESSOS_DISCENTES_AREA45),
+                ratio: safeNumber(row.RATIO_DISCENTES_DIV_TESES),
+                outlier: String(row.OUTLIER_IQR || "").toUpperCase() === "SIM",
+              }))
+              .filter((row) => row.ano > 0)
+              .sort((a, b) => a.ano - b.ano);
+
+            if (!serieRows.length) {
+              setResumo("Não há dados suficientes para construir a série recriada.");
+              showError(chartSerieDiv, "CSV sem dados.");
+              return;
+            }
+
+            const anos = serieRows.map((row) => row.ano);
+            const vals = serieRows.map((row) => row.egressos);
+            const cores = serieRows.map((row) =>
+              row.fonte.startsWith("ESTIMADO") ? "rgba(242, 140, 40, 0.92)" : "rgba(10, 98, 148, 0.86)"
+            );
+            const status = serieRows.map((row) => (row.fonte.startsWith("ESTIMADO") ? "Recriado" : "Observado"));
+
+            const estimados = serieRows.filter((row) => row.fonte.startsWith("ESTIMADO"));
+            const observados = serieRows.filter((row) => row.fonte.startsWith("OBSERVADO"));
+            const totalEstimado = estimados.reduce((acc, row) => acc + row.egressos, 0);
+            const totalObservado = observados.reduce((acc, row) => acc + row.egressos, 0);
+            const totalSerie = totalEstimado + totalObservado;
+
+            const ratiosClean = overlapRows.filter((row) => !row.outlier).map((row) => row.ratio);
+            const factorConservative = ratiosClean.length ? Math.min(...ratiosClean) : null;
+            const sortedClean = [...ratiosClean].sort((a, b) => a - b);
+            const factorMedian = sortedClean.length
+              ? sortedClean.length % 2
+                ? sortedClean[(sortedClean.length - 1) / 2]
+                : (sortedClean[sortedClean.length / 2 - 1] + sortedClean[sortedClean.length / 2]) / 2
+              : null;
+
+            setResumo(
+              `Série recriada (1999-2003): <strong>${toPtInt(totalEstimado)}</strong> egressos. ` +
+                `Série observada (2004-2024): <strong>${toPtInt(totalObservado)}</strong>. ` +
+                `Total 1999-2024: <strong>${toPtInt(totalSerie)}</strong>. ` +
+                `Fator conservador aplicado: <strong>${factorConservative === null ? "n/d" : toPtFixed(factorConservative, 6)}</strong> ` +
+                `(mediano limpo: ${factorMedian === null ? "n/d" : toPtFixed(factorMedian, 6)}).`
+            );
+
+            Plotly.newPlot(
+              chartSerieDiv,
+              [
+                {
+                  type: "bar",
+                  x: anos,
+                  y: vals,
+                  marker: {
+                    color: cores,
+                    line: { color: "rgba(10,39,64,0.35)", width: 1 },
+                  },
+                  customdata: status,
+                  hovertemplate: "Ano %{x}<br>%{customdata}: %{y}<extra></extra>",
+                },
+              ],
+              {
+                title: {
+                  text: "Área 45: série final de egressos (1999-2024)",
+                  x: 0.5,
+                  xanchor: "center",
+                },
+                margin: { t: 70, r: 20, b: 55, l: 70 },
+                paper_bgcolor: "rgba(0,0,0,0)",
+                plot_bgcolor: "rgba(255,255,255,0.6)",
+                xaxis: { title: "Ano base", tickmode: "linear", dtick: 1 },
+                yaxis: { title: "Egressos por ano", rangemode: "tozero" },
+                showlegend: false,
+              },
+              { responsive: true, displayModeBar: true, modeBarButtonsToRemove: ["lasso2d", "select2d"] }
+            );
+          })
+          .catch((err) => {
+            const message = err && err.message ? err.message : "Erro ao gerar a estimativa.";
+            setResumo(`Falha no carregamento dos dados: ${message}`);
+            showError(chartSerieDiv, message);
+          });
+      })();
+    </script>
+  </body>
+</html>
