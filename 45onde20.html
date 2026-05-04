@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Área 45 - Programas por UF e Área (2020)</title>
+    <link rel="icon" type="image/svg+xml" href="./Images/favicon.svg" />
+    <link rel="stylesheet" href="./CSS/site.css" />
+    <style>
+      .section-card {
+        border: 1px solid rgba(13, 125, 189, 0.28);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 14px;
+      }
+
+      .section-title {
+        margin: 0 0 8px;
+        color: #08547f;
+        font-size: 1rem;
+      }
+
+      .section-card p {
+        margin: 0 0 10px;
+      }
+
+      .answer-pill {
+        margin: 0 0 12px;
+        border: 1px solid rgba(13, 125, 189, 0.35);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.96);
+        padding: 10px 12px;
+        color: rgba(10, 39, 64, 0.95);
+      }
+
+      .answer-pill strong {
+        color: #08547f;
+      }
+
+      .table-wrap {
+        border: 1px dashed rgba(13, 125, 189, 0.4);
+        border-radius: 8px;
+        background: rgba(245, 249, 255, 0.9);
+        padding: 6px;
+        overflow: visible;
+        max-height: none;
+        width: 100%;
+      }
+
+      :root {
+        --sticky-area-width: 180px;
+        --sticky-presenca-width: 64px;
+      }
+
+      .matrix-table {
+        border-collapse: separate;
+        border-spacing: 0;
+        width: 100%;
+        table-layout: fixed;
+        font-size: 0.56rem;
+        background: #ffffff;
+      }
+
+      .matrix-table th,
+      .matrix-table td {
+        border: 1px solid rgba(13, 125, 189, 0.18);
+        padding: 2px 3px;
+        text-align: center;
+        white-space: nowrap;
+        line-height: 1.1;
+        min-width: 18px;
+      }
+
+      .matrix-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        background: rgba(225, 240, 252, 0.98);
+        color: #083e61;
+      }
+
+      .matrix-table th.sticky-col {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        background: rgba(230, 242, 252, 0.98);
+        color: #083e61;
+        font-weight: 700;
+        min-width: var(--sticky-area-width);
+      }
+
+      .matrix-table th.area-col {
+        width: var(--sticky-area-width);
+        text-align: left;
+      }
+
+      .matrix-table th.presenca-col,
+      .matrix-table td.presenca-col {
+        position: sticky;
+        left: var(--sticky-area-width);
+        z-index: 2;
+        width: var(--sticky-presenca-width);
+        min-width: var(--sticky-presenca-width);
+        background: rgba(238, 246, 252, 0.98);
+        font-weight: 700;
+      }
+
+      .matrix-table thead th.presenca-col {
+        z-index: 4;
+      }
+
+      .matrix-table thead th.corner {
+        left: 0;
+        z-index: 5;
+      }
+
+      .matrix-table td.total-col,
+      .matrix-table th.total-col {
+        background: rgba(13, 125, 189, 0.12);
+        font-weight: 700;
+      }
+
+      .matrix-table tfoot th,
+      .matrix-table tfoot td {
+        background: rgba(13, 125, 189, 0.16);
+        font-weight: 700;
+      }
+
+      .legend-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 8px 0 6px;
+        font-size: 0.82rem;
+        color: rgba(10, 39, 64, 0.9);
+      }
+
+      .legend-bar {
+        width: 240px;
+        height: 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(13, 125, 189, 0.25);
+        background: linear-gradient(to right, hsl(208 85% 97%), hsl(208 85% 54%));
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page" id="page">
+      <p class="page-home-link"><a href="./45.html">Voltar para a lista de relatórios</a></p>
+
+      <header class="page-header">
+        <h1>Programas por área e UF em 2020</h1>
+        <p>Matriz com áreas nas linhas, estados nas colunas e totais marginais (linhas e colunas).</p>
+      </header>
+
+      <main class="page-content">
+        <section class="tiles-panel">
+          <h2 class="panel-title">Tabela Área × UF (2020)</h2>
+          <div class="section-card">
+            <p class="answer-pill" id="resumo-matriz">Carregando dados...</p>
+            <p>
+              Base: <tt>Data/programas_ativos_2020_filtro.csv</tt> (programas em funcionamento). Cada célula
+              representa a contagem de programas em uma combinação de <tt>UF</tt> e <tt>área</tt>.
+              A coluna <tt>UFs c/ programas</tt> mostra em quantos estados cada área está presente.
+            </p>
+            <div class="legend-row">
+              <span>Densidade:</span>
+              <div class="legend-bar" aria-hidden="true"></div>
+              <span>0</span>
+              <span id="legend-max">máx.</span>
+            </div>
+            <div class="table-wrap">
+              <table class="matrix-table" id="matriz-uf-area">
+                <thead></thead>
+                <tbody></tbody>
+                <tfoot></tfoot>
+              </table>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <footer class="site-footnote">
+      <a href="http://linktr.ee/rafaeldcsantos">Rafael Santos</a>
+    </footer>
+
+    <script>
+      (function () {
+        const dataUrl = "./Data/programas_ativos_2020_filtro.csv";
+        const abrvUrl = "./Data/areas_avaliacao_abreviacoes.csv";
+        const resumoEl = document.getElementById("resumo-matriz");
+        const tableEl = document.getElementById("matriz-uf-area");
+        const theadEl = tableEl.querySelector("thead");
+        const tbodyEl = tableEl.querySelector("tbody");
+        const tfootEl = tableEl.querySelector("tfoot");
+        const legendMaxEl = document.getElementById("legend-max");
+
+        const ufOrder = [
+          "AC",
+          "AL",
+          "AM",
+          "AP",
+          "BA",
+          "CE",
+          "DF",
+          "ES",
+          "GO",
+          "MA",
+          "MG",
+          "MS",
+          "MT",
+          "PA",
+          "PB",
+          "PE",
+          "PI",
+          "PR",
+          "RJ",
+          "RN",
+          "RO",
+          "RR",
+          "RS",
+          "SC",
+          "SE",
+          "SP",
+          "TO",
+        ];
+
+        function parseCsvLine(line) {
+          const out = [];
+          let current = "";
+          let inQuotes = false;
+          for (let i = 0; i < line.length; i += 1) {
+            const ch = line[i];
+            if (ch === '"') {
+              if (inQuotes && line[i + 1] === '"') {
+                current += '"';
+                i += 1;
+              } else {
+                inQuotes = !inQuotes;
+              }
+              continue;
+            }
+            if (ch === "," && !inQuotes) {
+              out.push(current);
+              current = "";
+              continue;
+            }
+            current += ch;
+          }
+          out.push(current);
+          return out;
+        }
+
+        function parseCsv(text) {
+          const lines = String(text || "")
+            .split(/\r?\n/)
+            .filter((line) => line.trim().length > 0);
+          if (lines.length < 2) {
+            return [];
+          }
+          const headers = parseCsvLine(lines[0]).map((h) => h.trim());
+          return lines.slice(1).map((line) => {
+            const cols = parseCsvLine(line);
+            const row = {};
+            headers.forEach((header, idx) => {
+              row[header] = (cols[idx] || "").trim();
+            });
+            return row;
+          });
+        }
+
+        function showError(message) {
+          if (resumoEl) {
+            resumoEl.textContent = message;
+          }
+        }
+
+        function escapeHtml(value) {
+          return String(value || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+        }
+
+        function fetchCsvText(url) {
+          return fetch(url).then((resp) => {
+            if (!resp.ok) {
+              throw new Error(`Falha ao carregar CSV: HTTP ${resp.status} (${url})`);
+            }
+            return resp.text();
+          });
+        }
+
+        function colorByDensity(value, maxValue) {
+          if (value <= 0) {
+            return { bg: "hsl(0 85% 94%)", fg: "rgba(120,24,24,0.88)" };
+          }
+          if (!maxValue) {
+            return { bg: "hsl(208 85% 97%)", fg: "rgba(10,39,64,0.70)" };
+          }
+          const ratio = Math.min(1, Math.max(0, value / maxValue));
+          const intensity = Math.sqrt(ratio);
+          const light = 97 - intensity * 43;
+          const bg = `hsl(208 85% ${light}%)`;
+          const fg = intensity > 0.58 ? "rgba(255,255,255,0.95)" : "rgba(10,39,64,0.93)";
+          return { bg, fg };
+        }
+
+        Promise.all([fetchCsvText(dataUrl), fetchCsvText(abrvUrl)])
+          .then(([csvText, abrvText]) => {
+            const abrvByCode = {};
+            parseCsv(abrvText).forEach((row) => {
+              const code = String(row.CD_AREA_AVALIACAO || "").trim();
+              const label =
+                String(row.NM_AREA_AVALIACAO_ABREVIADA || "").trim() ||
+                String(row.NM_AREA_AVALIACAO || "").trim();
+              if (code) {
+                abrvByCode[code] = label;
+              }
+            });
+
+            const rows = parseCsv(csvText).filter(
+              (row) =>
+                String(row.AN_BASE || "").trim() === "2020" &&
+                String(row.DS_SITUACAO_PROGRAMA || "").trim().toUpperCase() === "EM FUNCIONAMENTO"
+            );
+
+            if (!rows.length) {
+              showError("Sem dados de programas ativos para 2020.");
+              return;
+            }
+
+            const matrix = {};
+            const areaNameByCode = {};
+            const areaSet = new Set();
+            const ufSet = new Set();
+
+            rows.forEach((row) => {
+              const uf = String(row.SG_UF_PROGRAMA || "").trim();
+              const code = String(row.CD_AREA_AVALIACAO || "").trim();
+              const areaName = String(row.NM_AREA_AVALIACAO || "").trim();
+              if (!uf || !code) {
+                return;
+              }
+              ufSet.add(uf);
+              areaSet.add(code);
+              if (!areaNameByCode[code]) {
+                areaNameByCode[code] = areaName;
+              }
+              if (!matrix[uf]) {
+                matrix[uf] = {};
+              }
+              matrix[uf][code] = (matrix[uf][code] || 0) + 1;
+            });
+
+            const areaCodes = Array.from(areaSet).sort((a, b) => Number(a) - Number(b));
+            const ufs = ufOrder.filter((uf) => ufSet.has(uf));
+            const areaTotals = {};
+            const ufTotals = {};
+            const presenceByArea = {};
+            let maxCell = 0;
+            let grandTotal = 0;
+
+            ufs.forEach((uf) => {
+              ufTotals[uf] = 0;
+              areaCodes.forEach((code) => {
+                const value = (matrix[uf] && matrix[uf][code]) || 0;
+                ufTotals[uf] += value;
+                areaTotals[code] = (areaTotals[code] || 0) + value;
+                if (value > maxCell) {
+                  maxCell = value;
+                }
+                grandTotal += value;
+              });
+            });
+
+            areaCodes.forEach((code) => {
+              presenceByArea[code] = ufs.reduce((acc, uf) => {
+                const value = (matrix[uf] && matrix[uf][code]) || 0;
+                return acc + (value > 0 ? 1 : 0);
+              }, 0);
+            });
+
+            if (legendMaxEl) {
+              legendMaxEl.textContent = maxCell ? `máx. ${maxCell}` : "máx. 0";
+            }
+
+            const headerCells = [
+              '<th class="sticky-col area-col corner">Área</th>',
+              '<th class="presenca-col">UFs c/ programas</th>',
+              ...ufs.map((uf) => `<th>${uf}</th>`),
+              '<th class="total-col">Total Área</th>',
+            ];
+            theadEl.innerHTML = `<tr>${headerCells.join("")}</tr>`;
+
+            tbodyEl.innerHTML = areaCodes
+              .map((code) => {
+                const label = abrvByCode[code] || areaNameByCode[code] || `Área ${code}`;
+                const safeLabel = escapeHtml(label);
+                const dataCells = ufs
+                  .map((uf) => {
+                    const value = (matrix[uf] && matrix[uf][code]) || 0;
+                    const colors = colorByDensity(value, maxCell);
+                    return `<td style="background:${colors.bg};color:${colors.fg};">${value}</td>`;
+                  })
+                  .join("");
+                return (
+                  `<tr>` +
+                  `<th class="sticky-col area-col" title="${safeLabel} (${code})">${code} - ${safeLabel}</th>` +
+                  `<td class="presenca-col">${presenceByArea[code] || 0}</td>` +
+                  dataCells +
+                  `<td class="total-col">${areaTotals[code] || 0}</td>` +
+                  `</tr>`
+                );
+              })
+              .join("");
+
+            const footerCells = [
+              '<th class="sticky-col area-col">Total UF</th>',
+              '<td class="presenca-col">-</td>',
+              ...ufs.map((uf) => `<td>${ufTotals[uf] || 0}</td>`),
+              `<td class="total-col">${grandTotal}</td>`,
+            ];
+            tfootEl.innerHTML = `<tr>${footerCells.join("")}</tr>`;
+
+            if (resumoEl) {
+              const maxPresence = Math.max(...areaCodes.map((code) => presenceByArea[code] || 0));
+              resumoEl.innerHTML =
+                `Tabela gerada com <strong>${grandTotal.toLocaleString("pt-BR")}</strong> programas ativos, ` +
+                `<strong>${ufs.length}</strong> UFs e <strong>${areaCodes.length}</strong> áreas de avaliação em 2020. ` +
+                `A coluna "UFs c/ programas" varia de 0 a <strong>${maxPresence}</strong> estados por área.`;
+            }
+          })
+          .catch((err) => {
+            const message = err && err.message ? err.message : "Erro ao montar tabela.";
+            showError(message);
+          });
+      })();
+    </script>
+  </body>
+</html>

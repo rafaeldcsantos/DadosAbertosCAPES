@@ -46,6 +46,7 @@
         margin: 0 auto;
       }
 
+      #chart-fluxo-total-periodo,
       #chart-fluxo-crescimento-abs,
       #chart-fluxo-crescimento-pct {
         width: min(100%, 1040px);
@@ -147,6 +148,14 @@
               </p>
             </div>
 
+            <h3 class="section-title">Total de novos alunos no período por área</h3>
+            <div class="chart-box">
+              <div id="chart-fluxo-total-periodo"></div>
+              <p class="chart-note">
+                Ranking do acumulado por área no período analisado. Área 45 em laranja.
+              </p>
+            </div>
+
             <h3 class="section-title">Comparação de crescimento entre áreas (absoluto)</h3>
             <div class="chart-box">
               <div id="chart-fluxo-crescimento-abs"></div>
@@ -201,6 +210,7 @@
         const minYear = 2013;
 
         const chartSerieDiv = document.getElementById("chart-fluxo-serie");
+        const chartTotalDiv = document.getElementById("chart-fluxo-total-periodo");
         const chartAbsDiv = document.getElementById("chart-fluxo-crescimento-abs");
         const chartPctDiv = document.getElementById("chart-fluxo-crescimento-pct");
         const resumoEl = document.getElementById("resumo-fluxo");
@@ -334,6 +344,7 @@
         if (typeof Plotly === "undefined") {
           setResumo("Falha: biblioteca Plotly não carregada.");
           showError(chartSerieDiv, "Plotly não foi carregado.");
+          showError(chartTotalDiv, "Plotly não foi carregado.");
           showError(chartAbsDiv, "Plotly não foi carregado.");
           showError(chartPctDiv, "Plotly não foi carregado.");
           setMediaTableMessage("Plotly não foi carregado.");
@@ -372,6 +383,7 @@
             if (!rows.length) {
               setResumo("Não há dados disponíveis para anos a partir de 2013.");
               showError(chartSerieDiv, "CSV sem dados para o gráfico de séries.");
+              showError(chartTotalDiv, "CSV sem dados para o histograma de totais.");
               showError(chartAbsDiv, "CSV sem dados para o comparativo absoluto.");
               showError(chartPctDiv, "CSV sem dados para o comparativo percentual.");
               setMediaTableMessage("Sem dados para o período selecionado.");
@@ -407,6 +419,7 @@
             if (!area45) {
               setResumo("A Área 45 não foi encontrada no CSV de ingressantes.");
               showError(chartSerieDiv, "Área 45 ausente na base.");
+              showError(chartTotalDiv, "Área 45 ausente na base.");
               showError(chartAbsDiv, "Área 45 ausente na base.");
               showError(chartPctDiv, "Área 45 ausente na base.");
               setMediaTableMessage("Área 45 ausente na base.");
@@ -449,6 +462,10 @@
             const avgEntrants45 = y45.length
               ? y45.reduce((acc, value) => acc + safeNumber(value), 0) / y45.length
               : 0;
+            const totalEntrants45 = y45.reduce((acc, value) => acc + safeNumber(value), 0);
+            const totalEntrantsAllAreas = rows.reduce((acc, row) => acc + safeNumber(row.entrantsPeople), 0);
+            const totalEntrantsOtherAreas = totalEntrantsAllAreas - totalEntrants45;
+            const shareTotal45 = totalEntrantsAllAreas > 0 ? (totalEntrants45 / totalEntrantsAllAreas) * 100 : 0;
             const yearSpan = lastYear - firstYear;
             const avgGrowthAbsPerYear = yearSpan > 0 ? delta45 / yearSpan : null;
             const avgGrowthPctPerYear =
@@ -460,6 +477,9 @@
               `<strong>Área 45</strong>: ${start45} novos alunos em ${firstYear} → ${end45} em ${lastYear} ` +
                 `(<strong>${delta45 >= 0 ? "+" : ""}${delta45}</strong>, ${delta45Pct === null ? "n/d" : `${delta45Pct.toFixed(2)}%`}). ` +
                 `Em 2020: ${mid45}. Participação no total: ${shareStart.toFixed(2)}% → ${shareEnd.toFixed(2)}%. ` +
+                `Acumulado ${firstYear}-${lastYear}: <strong>${totalEntrants45.toLocaleString("pt-BR")}</strong> (Área 45) vs ` +
+                `<strong>${totalEntrantsOtherAreas.toLocaleString("pt-BR")}</strong> (demais áreas), ` +
+                `com participação de ${shareTotal45.toFixed(2)}%. ` +
                 `Média de novos ingressantes/ano: <strong>${avgEntrants45.toFixed(1)}</strong>. ` +
                 `Média de crescimento anual: <strong>${avgGrowthAbsPerYear === null ? "n/d" : `${avgGrowthAbsPerYear >= 0 ? "+" : ""}${avgGrowthAbsPerYear.toFixed(1)}`}</strong> ` +
                 `ingressantes/ano (${avgGrowthPctPerYear === null ? "n/d" : `${avgGrowthPctPerYear.toFixed(2)}% a.a.`}).`
@@ -529,6 +549,85 @@
               displayModeBar: true,
               modeBarButtonsToRemove: ["lasso2d", "select2d"],
             });
+
+            const totalRows = areaSeriesRows
+              .map((row) => {
+                const total = row.seriesPeople.reduce((acc, value) => acc + safeNumber(value), 0);
+                const average = years.length ? total / years.length : 0;
+                return {
+                  code: row.code,
+                  label: row.label,
+                  total,
+                  average,
+                };
+              })
+              .sort((a, b) => {
+                if (b.total !== a.total) {
+                  return b.total - a.total;
+                }
+                return a.label.localeCompare(b.label, "pt-BR");
+              });
+
+            const totalLabels = totalRows.map((row) => row.label);
+            const totalValues = totalRows.map((row) => row.total);
+            const totalColors = totalRows.map((row) =>
+              row.code === "45" ? "rgba(242, 140, 40, 0.95)" : "rgba(10, 98, 148, 0.82)"
+            );
+            const totalCustom = totalRows.map((row) => [
+              row.average.toLocaleString("pt-BR", {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1,
+              }),
+              row.total.toLocaleString("pt-BR"),
+            ]);
+            const dynamicTotalHeight = Math.max(760, 180 + totalRows.length * 22);
+
+            Plotly.newPlot(
+              chartTotalDiv,
+              [
+                {
+                  type: "bar",
+                  orientation: "h",
+                  y: totalLabels,
+                  x: totalValues,
+                  marker: {
+                    color: totalColors,
+                    line: { color: "rgba(10,39,64,0.45)", width: 1 },
+                  },
+                  customdata: totalCustom,
+                  hovertemplate:
+                    "<b>%{y}</b><br>" +
+                    "Total no período: %{customdata[1]}<br>" +
+                    "Média anual: %{customdata[0]}<extra></extra>",
+                },
+              ],
+              {
+                title: {
+                  text: `Total de novos alunos por área (${firstYear}–${lastYear})`,
+                  x: 0.5,
+                  xanchor: "center",
+                },
+                height: dynamicTotalHeight,
+                margin: { t: 70, r: 20, b: 45, l: 260 },
+                paper_bgcolor: "rgba(0,0,0,0)",
+                plot_bgcolor: "rgba(255,255,255,0.6)",
+                xaxis: {
+                  title: "Total no período (novos alunos)",
+                  rangemode: "tozero",
+                },
+                yaxis: {
+                  automargin: true,
+                  autorange: "reversed",
+                  tickfont: { size: 10 },
+                },
+                showlegend: false,
+              },
+              {
+                responsive: true,
+                displayModeBar: true,
+                modeBarButtonsToRemove: ["lasso2d", "select2d"],
+              }
+            );
 
             const growthRows = areaSeriesRows.map((row) => {
               const start = safeNumber(row.seriesPeople[0]);
@@ -686,6 +785,7 @@
             const message = err && err.message ? err.message : "Erro ao gerar gráficos.";
             setResumo(`Falha no carregamento dos dados: ${message}`);
             showError(chartSerieDiv, message);
+            showError(chartTotalDiv, message);
             showError(chartAbsDiv, message);
             showError(chartPctDiv, message);
             setMediaTableMessage(message);

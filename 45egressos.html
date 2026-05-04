@@ -46,6 +46,7 @@
         margin: 0 auto;
       }
 
+      #chart-fluxo-total-periodo,
       #chart-fluxo-crescimento-abs,
       #chart-fluxo-crescimento-pct {
         width: min(100%, 1040px);
@@ -71,6 +72,43 @@
 
       .answer-pill strong {
         color: #08547f;
+      }
+
+      .table-box {
+        border: 1px dashed rgba(13, 125, 189, 0.4);
+        border-radius: 8px;
+        background: rgba(245, 249, 255, 0.9);
+        padding: 10px;
+        margin-bottom: 10px;
+      }
+
+      .table-scroll {
+        overflow-x: auto;
+      }
+
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+        background: rgba(255, 255, 255, 0.95);
+      }
+
+      .data-table th,
+      .data-table td {
+        border: 1px solid rgba(13, 125, 189, 0.22);
+        padding: 8px 10px;
+        text-align: left;
+        white-space: nowrap;
+      }
+
+      .data-table thead th {
+        background: rgba(13, 125, 189, 0.14);
+        color: #08547f;
+      }
+
+      .data-table tbody tr.area45-row td {
+        background: rgba(242, 140, 40, 0.16);
+        font-weight: 600;
       }
     </style>
   </head>
@@ -109,6 +147,14 @@
               </p>
             </div>
 
+            <h3 class="section-title">Total de egressos no período por área</h3>
+            <div class="chart-box">
+              <div id="chart-fluxo-total-periodo"></div>
+              <p class="chart-note">
+                Ranking do acumulado por área no período analisado. Área 45 em laranja.
+              </p>
+            </div>
+
             <h3 class="section-title">Comparação de crescimento entre áreas (absoluto)</h3>
             <div class="chart-box">
               <div id="chart-fluxo-crescimento-abs"></div>
@@ -123,6 +169,28 @@
               <p class="chart-note">
                 Variação percentual de egressos entre o primeiro e o último ano da série. Área 45 em laranja.
               </p>
+            </div>
+
+            <h3 class="section-title">Média de egressos/ano por área</h3>
+            <div class="table-box">
+              <p class="chart-note" id="tabela-media-egressos-periodo">Carregando tabela...</p>
+              <div class="table-scroll">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Posição</th>
+                      <th>Área</th>
+                      <th>Total no período</th>
+                      <th>Média de egressos/ano</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tabela-media-egressos-body">
+                    <tr>
+                      <td colspan="4">Carregando dados...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </section>
@@ -141,9 +209,12 @@
         const minYear = 2013;
 
         const chartSerieDiv = document.getElementById("chart-fluxo-serie");
+        const chartTotalDiv = document.getElementById("chart-fluxo-total-periodo");
         const chartAbsDiv = document.getElementById("chart-fluxo-crescimento-abs");
         const chartPctDiv = document.getElementById("chart-fluxo-crescimento-pct");
         const resumoEl = document.getElementById("resumo-fluxo");
+        const mediaTableBodyEl = document.getElementById("tabela-media-egressos-body");
+        const mediaTablePeriodoEl = document.getElementById("tabela-media-egressos-periodo");
 
         function parseCsvLine(line) {
           const out = [];
@@ -194,6 +265,15 @@
           return Number.isFinite(n) ? n : 0;
         }
 
+        function escapeHtml(value) {
+          return String(value || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+        }
+
         function pctChange(start, end) {
           if (!Number.isFinite(start) || start <= 0) {
             return null;
@@ -214,6 +294,43 @@
           }
         }
 
+        function setMediaTableMessage(message) {
+          if (mediaTablePeriodoEl) {
+            mediaTablePeriodoEl.textContent = "";
+          }
+          if (mediaTableBodyEl) {
+            mediaTableBodyEl.innerHTML = `<tr><td colspan="4">${escapeHtml(message)}</td></tr>`;
+          }
+        }
+
+        function renderMediaTable(rows, firstYear, lastYear) {
+          if (!mediaTableBodyEl) {
+            return;
+          }
+          if (!rows.length) {
+            setMediaTableMessage("Sem dados para montar a tabela de médias.");
+            return;
+          }
+
+          if (mediaTablePeriodoEl) {
+            mediaTablePeriodoEl.textContent = `Período ${firstYear}–${lastYear}. A Área 45 está destacada.`;
+          }
+
+          mediaTableBodyEl.innerHTML = rows
+            .map((row, idx) => {
+              const rowClass = row.code === "45" ? ' class="area45-row"' : "";
+              return (
+                `<tr${rowClass}>` +
+                `<td>${idx + 1}</td>` +
+                `<td>${escapeHtml(row.label)}</td>` +
+                `<td>${row.total.toLocaleString("pt-BR")}</td>` +
+                `<td>${row.average.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>` +
+                `</tr>`
+              );
+            })
+            .join("");
+        }
+
         function fetchCsvText(url) {
           return fetch(url).then((resp) => {
             if (!resp.ok) {
@@ -226,8 +343,10 @@
         if (typeof Plotly === "undefined") {
           setResumo("Falha: biblioteca Plotly não carregada.");
           showError(chartSerieDiv, "Plotly não foi carregado.");
+          showError(chartTotalDiv, "Plotly não foi carregado.");
           showError(chartAbsDiv, "Plotly não foi carregado.");
           showError(chartPctDiv, "Plotly não foi carregado.");
+          setMediaTableMessage("Plotly não foi carregado.");
           return;
         }
 
@@ -263,8 +382,10 @@
             if (!rows.length) {
               setResumo("Não há dados disponíveis para anos a partir de 2013.");
               showError(chartSerieDiv, "CSV sem dados para o gráfico de séries.");
+              showError(chartTotalDiv, "CSV sem dados para o histograma de totais.");
               showError(chartAbsDiv, "CSV sem dados para o comparativo absoluto.");
               showError(chartPctDiv, "CSV sem dados para o comparativo percentual.");
+              setMediaTableMessage("Sem dados para o período selecionado.");
               return;
             }
 
@@ -297,10 +418,32 @@
             if (!area45) {
               setResumo("A Área 45 não foi encontrada no CSV de egressos.");
               showError(chartSerieDiv, "Área 45 ausente na base.");
+              showError(chartTotalDiv, "Área 45 ausente na base.");
               showError(chartAbsDiv, "Área 45 ausente na base.");
               showError(chartPctDiv, "Área 45 ausente na base.");
+              setMediaTableMessage("Área 45 ausente na base.");
               return;
             }
+
+            const mediaRows = areaSeriesRows
+              .map((row) => {
+                const total = row.seriesPeople.reduce((acc, value) => acc + safeNumber(value), 0);
+                const average = years.length ? total / years.length : 0;
+                return {
+                  code: row.code,
+                  label: row.label,
+                  total,
+                  average,
+                };
+              })
+              .sort((a, b) => {
+                if (b.average !== a.average) {
+                  return b.average - a.average;
+                }
+                return a.label.localeCompare(b.label, "pt-BR");
+              });
+
+            renderMediaTable(mediaRows, firstYear, lastYear);
 
             const y45 = area45.seriesPeople;
             const start45 = y45[0];
@@ -318,6 +461,9 @@
             const shareStart = totalByYear[firstYear] > 0 ? (start45 / totalByYear[firstYear]) * 100 : 0;
             const shareEnd = totalByYear[lastYear] > 0 ? (end45 / totalByYear[lastYear]) * 100 : 0;
             const totalTitulados45Period = y45.reduce((acc, value) => acc + safeNumber(value), 0);
+            const totalEgressosAllAreas = rows.reduce((acc, row) => acc + safeNumber(row.egressosPeople), 0);
+            const totalEgressosOtherAreas = totalEgressosAllAreas - totalTitulados45Period;
+            const shareTotal45 = totalEgressosAllAreas > 0 ? (totalTitulados45Period / totalEgressosAllAreas) * 100 : 0;
             const area45ByYear = {};
             years.forEach((year, idx) => {
               area45ByYear[year] = safeNumber(y45[idx]);
@@ -344,7 +490,9 @@
               `<strong>Área 45</strong>: ${start45} egressos em ${firstYear} → ${end45} em ${lastYear} ` +
                 `(<strong>${delta45 >= 0 ? "+" : ""}${delta45}</strong>, ${delta45Pct === null ? "n/d" : `${delta45Pct.toFixed(2)}%`}). ` +
                 `No ano intermediário (${midYear}): ${mid45}. Participação no total: ${shareStart.toFixed(2)}% → ${shareEnd.toFixed(2)}%. ` +
-                `Total de egressos no período com registro (${firstYear}–${lastYear}): <strong>${totalTitulados45Period}</strong>. ` +
+                `Acumulado ${firstYear}-${lastYear}: <strong>${totalTitulados45Period.toLocaleString("pt-BR")}</strong> (Área 45) vs ` +
+                `<strong>${totalEgressosOtherAreas.toLocaleString("pt-BR")}</strong> (demais áreas), ` +
+                `com participação de ${shareTotal45.toFixed(2)}%. ` +
                 `Egressos por período de avaliação: <strong>2017–2020 = ${egressos2017a2020}</strong> e ` +
                 `<strong>2021–2024 = ${egressos2021a2024}</strong>. ` +
                 `Média de egressos/ano: <strong>${avgEgressos45.toFixed(1)}</strong>. ` +
@@ -416,6 +564,85 @@
               displayModeBar: true,
               modeBarButtonsToRemove: ["lasso2d", "select2d"],
             });
+
+            const totalRows = areaSeriesRows
+              .map((row) => {
+                const total = row.seriesPeople.reduce((acc, value) => acc + safeNumber(value), 0);
+                const average = years.length ? total / years.length : 0;
+                return {
+                  code: row.code,
+                  label: row.label,
+                  total,
+                  average,
+                };
+              })
+              .sort((a, b) => {
+                if (b.total !== a.total) {
+                  return b.total - a.total;
+                }
+                return a.label.localeCompare(b.label, "pt-BR");
+              });
+
+            const totalLabels = totalRows.map((row) => row.label);
+            const totalValues = totalRows.map((row) => row.total);
+            const totalColors = totalRows.map((row) =>
+              row.code === "45" ? "rgba(242, 140, 40, 0.95)" : "rgba(10, 98, 148, 0.82)"
+            );
+            const totalCustom = totalRows.map((row) => [
+              row.average.toLocaleString("pt-BR", {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1,
+              }),
+              row.total.toLocaleString("pt-BR"),
+            ]);
+            const dynamicTotalHeight = Math.max(760, 180 + totalRows.length * 22);
+
+            Plotly.newPlot(
+              chartTotalDiv,
+              [
+                {
+                  type: "bar",
+                  orientation: "h",
+                  y: totalLabels,
+                  x: totalValues,
+                  marker: {
+                    color: totalColors,
+                    line: { color: "rgba(10,39,64,0.45)", width: 1 },
+                  },
+                  customdata: totalCustom,
+                  hovertemplate:
+                    "<b>%{y}</b><br>" +
+                    "Total no período: %{customdata[1]}<br>" +
+                    "Média anual: %{customdata[0]}<extra></extra>",
+                },
+              ],
+              {
+                title: {
+                  text: `Total de egressos por área (${firstYear}–${lastYear})`,
+                  x: 0.5,
+                  xanchor: "center",
+                },
+                height: dynamicTotalHeight,
+                margin: { t: 70, r: 20, b: 45, l: 260 },
+                paper_bgcolor: "rgba(0,0,0,0)",
+                plot_bgcolor: "rgba(255,255,255,0.6)",
+                xaxis: {
+                  title: "Total no período (egressos)",
+                  rangemode: "tozero",
+                },
+                yaxis: {
+                  automargin: true,
+                  autorange: "reversed",
+                  tickfont: { size: 10 },
+                },
+                showlegend: false,
+              },
+              {
+                responsive: true,
+                displayModeBar: true,
+                modeBarButtonsToRemove: ["lasso2d", "select2d"],
+              }
+            );
 
             const growthRows = areaSeriesRows.map((row) => {
               const start = safeNumber(row.seriesPeople[0]);
@@ -573,8 +800,10 @@
             const message = err && err.message ? err.message : "Erro ao gerar gráficos.";
             setResumo(`Falha no carregamento dos dados: ${message}`);
             showError(chartSerieDiv, message);
+            showError(chartTotalDiv, message);
             showError(chartAbsDiv, message);
             showError(chartPctDiv, message);
+            setMediaTableMessage(message);
           });
       })();
     </script>
