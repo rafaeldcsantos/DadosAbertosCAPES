@@ -321,6 +321,12 @@ a:hover {
 .site-footnote {
   width: min(var(--page-max-width), calc(100vw - 40px));
   margin: 8px auto 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(10, 39, 64, 0.12);
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   text-align: center;
   font-size: 0.74rem;
   color: rgba(10, 39, 64, 0.62);
